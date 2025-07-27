@@ -115,7 +115,7 @@ install_fallback_packages() {
     
     local packages=(
         "build-essential" "cmake" "git" "libboost-all-dev"
-        "libcppunit-dev" "libguile-3.0-dev" "python3-dev"
+        "libcppunit-dev" "guile-3.0-dev" "python3-dev"
         "python3-pip" "python3-numpy" "python3-scipy"
         "libgsl-dev" "pkg-config"
     )
