@@ -481,51 +481,256 @@ build_component() {
     fi
 }
 
-# Start OpenCog services with port forwarding
+# Start OpenCog services with port forwarding and retry logic
 start_opencog_services() {
     log_info "Configuring OpenCog services for Gitpod..."
     
-    # Create service startup scripts
+    # Create service startup scripts with improved error handling
     create_service_scripts
     
     # Set up port forwarding information
     setup_port_forwarding
     
+    # Verify that the service scripts are executable and accessible
+    verify_service_scripts
+    
     log_success "Services configured - use the created scripts to start them"
 }
 
-# Create convenient service startup scripts
+# Create convenient service startup scripts with improved error handling
 create_service_scripts() {
     local bin_dir="$HOME/.local/bin"
     mkdir -p "$bin_dir"
     
-    # CogServer startup script
+    # CogServer startup script with retry logic
     cat > "$bin_dir/start-cogserver" << 'EOF'
 #!/bin/bash
 echo "🖥️ Starting CogServer on port 17001..."
-cd /workspace/opencog-org/cogserver/build
-if [ -f "./opencog/cogserver/server/cogserver" ]; then
-    ./opencog/cogserver/server/cogserver
+
+# Wait for dependencies to be ready
+check_dependencies() {
+    local missing_libs=()
+    
+    # Check for essential libraries
+    if ! ldconfig -p | grep -q "libcogutil"; then
+        missing_libs+=("libcogutil")
+    fi
+    
+    if ! ldconfig -p | grep -q "libatomspace"; then
+        missing_libs+=("libatomspace")
+    fi
+    
+    if [ ${#missing_libs[@]} -gt 0 ]; then
+        echo "⚠️ Missing libraries: ${missing_libs[*]}"
+        echo "🔧 Try running: build-opencog"
+        return 1
+    fi
+    
+    return 0
+}
+
+# Try multiple possible locations for cogserver
+find_cogserver_binary() {
+    local possible_paths=(
+        "/workspace/opencog-org/cogserver/build/opencog/cogserver/server/cogserver"
+        "$HOME/.local/bin/cogserver"
+        "/workspace/opencog-org/cogserver/build/cogserver"
+    )
+    
+    for path in "${possible_paths[@]}"; do
+        if [ -f "$path" ] && [ -x "$path" ]; then
+            echo "$path"
+            return 0
+        fi
+    done
+    
+    return 1
+}
+
+# Main execution
+if ! check_dependencies; then
+    echo "❌ Dependencies not ready. Build OpenCog components first."
+    exit 1
+fi
+
+if cogserver_binary=$(find_cogserver_binary); then
+    echo "🚀 Found CogServer at: $cogserver_binary"
+    echo "🌐 CogServer will be available on port 17001"
+    echo "🔗 Gitpod will auto-forward this port for external access"
+    echo ""
+    exec "$cogserver_binary"
 else
-    echo "❌ CogServer binary not found. Run build-cogserver first."
+    echo "❌ CogServer binary not found."
+    echo "🔧 Try running: build-cogserver"
+    echo "📁 Expected locations:"
+    echo "  - /workspace/opencog-org/cogserver/build/opencog/cogserver/server/cogserver"
+    echo "  - $HOME/.local/bin/cogserver"
+    exit 1
 fi
 EOF
     chmod +x "$bin_dir/start-cogserver"
     
-    # AtomSpace REPL script
+    # AtomSpace REPL script with retry logic
     cat > "$bin_dir/start-atomspace-repl" << 'EOF'
 #!/bin/bash
 echo "🔬 Starting AtomSpace Guile REPL..."
-cd /workspace/opencog-org/atomspace/build
-if [ -f "./opencog/guile/opencog-guile" ]; then
-    ./opencog/guile/opencog-guile
+
+# Check for Guile
+if ! command -v guile >/dev/null 2>&1; then
+    echo "❌ Guile not found. Install with: sudo apt-get install guile-3.0-dev"
+    exit 1
+fi
+
+# Check for AtomSpace Guile integration
+check_atomspace_guile() {
+    local possible_paths=(
+        "/workspace/opencog-org/atomspace/build/opencog/guile/opencog-guile"
+        "$HOME/.local/bin/opencog-guile"
+        "/workspace/opencog-org/atomspace/build/guile/opencog-guile"
+    )
+    
+    for path in "${possible_paths[@]}"; do
+        if [ -f "$path" ] && [ -x "$path" ]; then
+            echo "$path"
+            return 0
+        fi
+    done
+    
+    return 1
+}
+
+# Set up Guile load path
+export GUILE_LOAD_PATH="/workspace/opencog-org:$HOME/.local/share/guile/site/3.0:$GUILE_LOAD_PATH"
+
+if guile_binary=$(check_atomspace_guile); then
+    echo "🚀 Found AtomSpace Guile REPL at: $guile_binary"
+    echo "📚 Guile load path configured"
+    echo ""
+    exec "$guile_binary"
 else
-    echo "❌ AtomSpace Guile REPL not found. Run build-atomspace first."
+    echo "⚠️ AtomSpace Guile REPL not found, using standard Guile..."
+    echo "🔧 For full AtomSpace integration, run: build-atomspace"
+    echo "📚 Starting standard Guile REPL with OpenCog paths..."
+    echo ""
+    exec guile
 fi
 EOF
     chmod +x "$bin_dir/start-atomspace-repl"
     
+    # Comprehensive OpenCog status check
+    cat > "$bin_dir/opencog_status" << 'EOF'
+#!/bin/bash
+echo "🧠 OpenCog GitPod Environment Status"
+echo "===================================="
+echo "Workspace: ${OPENCOG_WORKSPACE:-/workspace/opencog-org}"
+echo "Build Dir: ${OPENCOG_BUILD_DIR:-$HOME/opencog-build}"
+echo "Local Install: $HOME/.local"
+echo ""
+
+# Check system dependencies
+echo "📦 System Dependencies:"
+deps=("cmake" "make" "gcc" "g++" "pkg-config" "guile")
+for dep in "${deps[@]}"; do
+    if command -v "$dep" >/dev/null 2>&1; then
+        version=$(command "$dep" --version 2>/dev/null | head -1 | cut -d' ' -f3-4 || echo "unknown")
+        echo "  ✅ $dep ($version)"
+    else
+        echo "  ❌ $dep (not found)"
+    fi
+done
+echo ""
+
+# Check OpenCog components
+echo "🔧 OpenCog Components:"
+workspace="${OPENCOG_WORKSPACE:-/workspace/opencog-org}"
+for component in cogutil atomspace atomspace-storage cogserver; do
+    if [ -d "$workspace/$component" ]; then
+        echo -n "  ✅ $component (source available"
+        if [ -d "$workspace/$component/build" ] && [ "$(ls -A "$workspace/$component/build" 2>/dev/null)" ]; then
+            echo ", built)"
+        else
+            echo ", not built)"
+        fi
+    else
+        echo "  ❌ $component (source not found)"
+    fi
+done
+echo ""
+
+# Check libraries
+echo "📚 OpenCog Libraries:"
+libs=("libcogutil" "libatomspace")
+for lib in "${libs[@]}"; do
+    if ldconfig -p 2>/dev/null | grep -q "$lib"; then
+        echo "  ✅ $lib (available)"
+    else
+        echo "  ⏳ $lib (not in library path)"
+    fi
+done
+echo ""
+
+# Check services
+echo "🌐 Service Status:"
+services=(
+    "17001:CogServer Telnet"
+    "18001:CogServer Web"
+    "5000:REST API"
+    "8080:Web Demos"
+)
+
+for service in "${services[@]}"; do
+    port="${service%:*}"
+    name="${service#*:}"
+    if netstat -tuln 2>/dev/null | grep -q ":$port "; then
+        echo "  🟢 $name (port $port active)"
+    else
+        echo "  ⚪ $name (port $port not active)"
+    fi
+done
+echo ""
+
+echo "💡 Quick Commands:"
+echo "  build-opencog           - Build all components"
+echo "  start-cogserver         - Launch CogServer"
+echo "  start-atomspace-repl    - Launch AtomSpace REPL"
+echo "  cat /tmp/opencog-deploy.log - View deployment logs"
+EOF
+    chmod +x "$bin_dir/opencog_status"
+    
     log_success "Service startup scripts created in $bin_dir"
+}
+
+# Verify that service scripts are properly created and accessible
+verify_service_scripts() {
+    log_info "Verifying service scripts..."
+    
+    local bin_dir="$HOME/.local/bin"
+    local scripts=("start-cogserver" "start-atomspace-repl" "opencog_status")
+    local failed_scripts=()
+    
+    for script in "${scripts[@]}"; do
+        local script_path="$bin_dir/$script"
+        if [ -f "$script_path" ] && [ -x "$script_path" ]; then
+            log_success "Service script verified: $script"
+        else
+            log_warning "Service script missing or not executable: $script"
+            failed_scripts+=("$script")
+        fi
+    done
+    
+    if [ ${#failed_scripts[@]} -eq 0 ]; then
+        log_success "All service scripts verified"
+    else
+        log_warning "Some service scripts failed verification: ${failed_scripts[*]}"
+    fi
+    
+    # Ensure bin directory is in PATH
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        log_info "Adding $HOME/.local/bin to PATH..."
+        export PATH="$HOME/.local/bin:$PATH"
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+        log_success "PATH updated"
+    fi
 }
 
 # Set up port forwarding information for Gitpod

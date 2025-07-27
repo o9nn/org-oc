@@ -86,16 +86,27 @@ setup_directories() {
     done
 }
 
-# Install essential system packages
+# Install essential system packages with retry logic
 install_system_packages() {
     log_info "Installing essential system packages..."
     
-    # Update package list
-    if sudo apt-get update >/dev/null 2>&1; then
-        log_success "Package list updated"
-    else
-        log_warning "Failed to update package list"
-    fi
+    # Update package list with retry
+    local max_attempts=3
+    local attempt=0
+    
+    while [ $attempt -lt $max_attempts ]; do
+        attempt=$((attempt + 1))
+        log_info "Updating package lists (attempt $attempt/$max_attempts)..."
+        if sudo apt-get update >/dev/null 2>&1; then
+            log_success "Package list updated"
+            break
+        else
+            log_warning "Failed to update package list (attempt $attempt/$max_attempts)"
+            if [ $attempt -lt $max_attempts ]; then
+                sleep $((2 * attempt))
+            fi
+        fi
+    done
     
     # Essential packages for OpenCog development
     local packages=(
@@ -110,15 +121,34 @@ install_system_packages() {
         "htop"
         "unzip"
         "locales"
+        "pkg-config"
+        "libssl-dev"
     )
     
     for package in "${packages[@]}"; do
-        if sudo apt-get install -y "$package" >/dev/null 2>&1; then
-            log_success "Installed: $package"
-        else
-            log_warning "Failed to install: $package"
-        fi
+        attempt=0
+        while [ $attempt -lt 3 ]; do
+            attempt=$((attempt + 1))
+            if sudo apt-get install -y "$package" >/dev/null 2>&1; then
+                log_success "Installed: $package"
+                break
+            else
+                log_warning "Failed to install: $package (attempt $attempt/3)"
+                if [ $attempt -lt 3 ]; then
+                    sleep 2
+                else
+                    log_warning "Giving up on $package after 3 attempts"
+                fi
+            fi
+        done
+        
+        # Small delay between packages
+        sleep 0.5
     done
+    
+    # Wait for packages to be ready
+    log_info "Waiting for package installations to stabilize..."
+    sleep 3
 }
 
 # Configure Git for development
