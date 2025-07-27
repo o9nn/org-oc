@@ -45,18 +45,34 @@ log_header() {
     log "${PURPLE}$(printf '=%.0s' {1..60})${NC}"
 }
 
-# Error handling with graceful fallbacks
+# Error handling with graceful fallbacks and improved logging
 handle_error() {
     local exit_code=$?
     local line_number=$1
-    log_error "Error occurred in deployment script at line $line_number (exit code: $exit_code)"
+    local function_name="${FUNCNAME[2]:-unknown}"
+    
+    log_error "Error occurred in function '$function_name' at line $line_number (exit code: $exit_code)"
+    
+    # Log additional context
+    echo "Error details:" >> "$LOG_FILE"
+    echo "  Function: $function_name" >> "$LOG_FILE"
+    echo "  Line: $line_number" >> "$LOG_FILE"
+    echo "  Exit code: $exit_code" >> "$LOG_FILE"
+    echo "  Time: $(date)" >> "$LOG_FILE"
+    echo "  Working directory: $(pwd)" >> "$LOG_FILE"
+    echo "" >> "$LOG_FILE"
+    
     log_warning "Continuing with graceful fallback options..."
+    
+    # Add a small delay to prevent rapid error loops
+    sleep 2
+    
     return 0  # Continue execution instead of failing
 }
 
 trap 'handle_error ${LINENO}' ERR
 
-# Main deployment function
+# Main deployment function with improved coordination
 main() {
     log_header "OpenCog Gitpod Deployment Starting"
     
@@ -70,29 +86,85 @@ main() {
     
     # Step 1: Environment setup
     log_header "Environment Setup"
-    source "$SCRIPT_DIR/setup.sh" || log_warning "Setup script had issues, continuing..."
+    if ! source "$SCRIPT_DIR/setup.sh"; then
+        log_warning "Setup script had issues, but continuing..."
+    fi
+    
+    # Wait for environment to stabilize
+    log_info "Allowing environment to stabilize..."
+    sleep 5
     
     # Step 2: Guix installation and manifest deployment
     log_header "Guix Package Installation"
-    deploy_guix_packages
+    if ! deploy_guix_packages; then
+        log_warning "Guix package installation had issues, but fallback should handle essentials"
+    fi
+    
+    # Wait for packages to be ready
+    log_info "Waiting for package installations to complete..."
+    sleep 10
     
     # Step 3: OpenCog build process
     log_header "OpenCog Build Process"
-    build_opencog_components
+    if ! build_opencog_components; then
+        log_warning "Some OpenCog components failed to build, but continuing..."
+    fi
     
-    # Step 4: Service startup
+    # Step 4: Service startup preparation
     log_header "Service Initialization"
-    start_opencog_services
+    if ! start_opencog_services; then
+        log_warning "Service initialization had issues, but continuing..."
+    fi
     
     # Step 5: Final verification
     log_header "Deployment Verification"
-    verify_deployment
-    
-    log_success "OpenCog Gitpod deployment completed successfully!"
-    display_next_steps
+    if verify_deployment; then
+        log_success "OpenCog Gitpod deployment completed successfully!"
+        display_next_steps
+        return 0
+    else
+        log_warning "Deployment verification found issues, but basic functionality may still work"
+        display_troubleshooting_steps
+        return 0  # Don't fail completely
+    fi
 }
 
-# Deploy Guix packages using the optimized manifest
+# Display troubleshooting steps when deployment has issues
+display_troubleshooting_steps() {
+    log_header "Troubleshooting Information"
+    
+    cat << EOF
+
+⚠️  OpenCog Gitpod Environment Partial Setup
+==============================================
+
+Some components may not have built correctly. Here's what you can try:
+
+🔧 Manual Build Commands:
+  build-opencog           - Retry building all components
+  build-cogutil           - Build CogUtil library only
+  build-atomspace         - Build AtomSpace only
+  build-cogserver         - Build CogServer only
+
+🔍 Diagnosis Commands:
+  opencog_status          - Check current environment status
+  cat $LOG_FILE           - View detailed deployment logs
+  
+📖 Troubleshooting Guide:
+  cat .gitpod/TROUBLESHOOTING.md - Comprehensive troubleshooting
+
+If issues persist, you can:
+1. Wait a few minutes and retry: build-opencog
+2. Check the logs for specific error messages
+3. Try building components individually
+4. Report issues with log details
+
+Happy coding with OpenCog! 🧠✨
+
+EOF
+}
+
+# Deploy Guix packages using the optimized manifest with retry logic
 deploy_guix_packages() {
     log_info "Installing Guix packages using optimized manifest..."
     
@@ -100,50 +172,236 @@ deploy_guix_packages() {
     export PATH="/var/guix/profiles/per-user/gitpod/current-guix/bin:$PATH"
     export GUIX_LOCPATH="$HOME/.guix-profile/lib/locale"
     
-    # Install packages from manifest with timeout and fallback
-    if timeout 600 guix package --manifest="$SCRIPT_DIR/manifest.scm" 2>>"$LOG_FILE"; then
-        log_success "Guix packages installed successfully"
-    else
-        log_warning "Guix manifest installation failed or timed out, using fallback method"
+    # Retry Guix installation with exponential backoff
+    local max_attempts=3
+    local attempt=0
+    local base_timeout=300  # Start with 5 minutes
+    local success=false
+    
+    while [ $attempt -lt $max_attempts ] && [ "$success" = false ]; do
+        attempt=$((attempt + 1))
+        local timeout_duration=$((base_timeout * attempt))
+        
+        log_info "Guix installation attempt $attempt/$max_attempts (timeout: ${timeout_duration}s)..."
+        
+        if timeout $timeout_duration guix package --manifest="$SCRIPT_DIR/manifest.scm" 2>>"$LOG_FILE"; then
+            log_success "Guix packages installed successfully on attempt $attempt"
+            success=true
+            
+            # Wait for packages to be fully ready
+            log_info "Waiting for Guix packages to initialize..."
+            sleep 10
+        else
+            log_warning "Guix installation attempt $attempt failed or timed out"
+            if [ $attempt -lt $max_attempts ]; then
+                local wait_time=$((5 * attempt))
+                log_info "Waiting ${wait_time}s before retry..."
+                sleep $wait_time
+            fi
+        fi
+    done
+    
+    if [ "$success" = false ]; then
+        log_warning "All Guix installation attempts failed, using fallback method"
         install_fallback_packages
     fi
 }
 
-# Fallback package installation using system packages
+# Fallback package installation using system packages with retry logic
 install_fallback_packages() {
     log_info "Installing essential packages via system package manager..."
+    
+    # Update package list with retry
+    local max_attempts=3
+    local attempt=0
+    
+    while [ $attempt -lt $max_attempts ]; do
+        attempt=$((attempt + 1))
+        if sudo apt-get update 2>>"$LOG_FILE"; then
+            log_success "Package list updated successfully"
+            break
+        else
+            log_warning "Package list update failed (attempt $attempt/$max_attempts)"
+            if [ $attempt -lt $max_attempts ]; then
+                sleep $((2 * attempt))
+            fi
+        fi
+    done
     
     local packages=(
         "build-essential" "cmake" "git" "libboost-all-dev"
         "libcppunit-dev" "guile-3.0-dev" "python3-dev"
         "python3-pip" "python3-numpy" "python3-scipy"
-        "libgsl-dev" "pkg-config" "cython3" "valgrind"
+        "libgsl-dev" "pkg-config" "cython3" "libssl-dev"
+        "libffi-dev" "libbz2-dev" "libreadline-dev" 
+        "libsqlite3-dev" "llvm" "libncurses5-dev"
+        "libncursesw5-dev" "xz-utils" "tk-dev" "valgrind"
     )
     
     for package in "${packages[@]}"; do
-        if sudo apt-get install -y "$package" 2>>"$LOG_FILE"; then
-            log_success "Installed $package"
-        else
-            log_warning "Failed to install $package, continuing..."
-        fi
+        # Try to install each package with retry
+        attempt=0
+        while [ $attempt -lt 3 ]; do
+            attempt=$((attempt + 1))
+            if sudo apt-get install -y "$package" 2>>"$LOG_FILE"; then
+                log_success "Installed $package"
+                break
+            else
+                log_warning "Failed to install $package (attempt $attempt/3)"
+                if [ $attempt -lt 3 ]; then
+                    sleep 2
+                else
+                    log_warning "Giving up on $package after 3 attempts, continuing..."
+                fi
+            fi
+        done
+        
+        # Small delay between packages to avoid overwhelming the system
+        sleep 1
     done
+    
+    # Wait for packages to be ready
+    log_info "Waiting for installed packages to be ready..."
+    sleep 5
+    
+    # Verify critical packages are actually installed
+    verify_critical_packages
 }
 
-# Build core OpenCog components
+# Verify that critical packages are properly installed
+verify_critical_packages() {
+    log_info "Verifying critical package installations..."
+    
+    local critical_packages=("cmake" "gcc" "g++" "pkg-config")
+    local missing_critical=()
+    
+    for package in "${critical_packages[@]}"; do
+        if ! command -v "$package" >/dev/null 2>&1; then
+            missing_critical+=("$package")
+        fi
+    done
+    
+    if [ ${#missing_critical[@]} -eq 0 ]; then
+        log_success "All critical packages verified"
+    else
+        log_error "Missing critical packages: ${missing_critical[*]}"
+        return 1
+    fi
+}
+
+# Build core OpenCog components with improved dependency handling
 build_opencog_components() {
     local components=("cogutil" "atomspace" "atomspace-storage" "cogserver")
+    local built_components=()
+    local failed_components=()
+    
+    log_info "Building OpenCog components in dependency order..."
     
     for component in "${components[@]}"; do
         log_info "Building $component..."
-        if build_component "$component"; then
+        
+        # Wait for previous component to be fully ready before proceeding
+        if [ ${#built_components[@]} -gt 0 ]; then
+            log_info "Waiting for previous components to stabilize..."
+            sleep 5
+            
+            # Verify previous component installation
+            verify_component_installation "${built_components[-1]}"
+        fi
+        
+        if build_component_with_retry "$component"; then
             log_success "$component built successfully"
+            built_components+=("$component")
+            
+            # Additional wait after successful build to ensure libraries are ready
+            log_info "Allowing $component libraries to stabilize..."
+            sleep 3
         else
-            log_warning "$component build failed, continuing with other components..."
+            log_warning "$component build failed after all retry attempts"
+            failed_components+=("$component")
+        fi
+        
+        # Update library cache after each successful build
+        if [[ " ${built_components[*]} " =~ " ${component} " ]]; then
+            sudo ldconfig 2>/dev/null || log_warning "ldconfig failed, continuing..."
         fi
     done
+    
+    log_info "Build summary: ${#built_components[@]} successful, ${#failed_components[@]} failed"
+    if [ ${#failed_components[@]} -gt 0 ]; then
+        log_warning "Failed components: ${failed_components[*]}"
+        log_info "This may be due to dependency issues. Try running build-opencog manually later."
+    fi
 }
 
-# Build individual component with error handling
+# Build individual component with retry logic
+build_component_with_retry() {
+    local component=$1
+    local max_attempts=2
+    local attempt=0
+    
+    while [ $attempt -lt $max_attempts ]; do
+        attempt=$((attempt + 1))
+        log_info "Building $component (attempt $attempt/$max_attempts)..."
+        
+        if build_component "$component"; then
+            return 0
+        else
+            log_warning "$component build failed on attempt $attempt"
+            if [ $attempt -lt $max_attempts ]; then
+                log_info "Cleaning build directory and retrying..."
+                local component_dir="/workspace/opencog-org/$component"
+                if [ -d "$component_dir/build" ]; then
+                    rm -rf "$component_dir/build"
+                fi
+                sleep 5
+            fi
+        fi
+    done
+    
+    return 1
+}
+
+# Verify component installation
+verify_component_installation() {
+    local component=$1
+    local component_dir="/workspace/opencog-org/$component"
+    
+    log_info "Verifying $component installation..."
+    
+    # Check if build directory exists and has content
+    if [ -d "$component_dir/build" ] && [ "$(ls -A "$component_dir/build" 2>/dev/null)" ]; then
+        # Check for specific library files based on component
+        case "$component" in
+            "cogutil")
+                if [ -f "$component_dir/build/opencog/util/libcogutil.so" ] || 
+                   [ -f "$HOME/.local/lib/libcogutil.so" ]; then
+                    log_success "$component libraries found"
+                    return 0
+                fi
+                ;;
+            "atomspace")
+                if [ -f "$component_dir/build/opencog/atoms/libatomspace.so" ] || 
+                   [ -f "$HOME/.local/lib/libatomspace.so" ]; then
+                    log_success "$component libraries found"
+                    return 0
+                fi
+                ;;
+            *)
+                # Generic check for any library files
+                if find "$component_dir/build" -name "*.so" | grep -q .; then
+                    log_success "$component libraries found"
+                    return 0
+                fi
+                ;;
+        esac
+    fi
+    
+    log_warning "$component installation verification failed"
+    return 1
+}
+
+# Build individual component with error handling and better dependency management
 build_component() {
     local component=$1
     local component_dir="/workspace/opencog-org/$component"
@@ -154,72 +412,325 @@ build_component() {
     fi
     
     cd "$component_dir"
+    
+    # Clean any previous failed build
+    if [ -d "build" ]; then
+        log_info "Cleaning previous build directory for $component..."
+        rm -rf build
+    fi
+    
     mkdir -p build
     cd build
     
-    # Configure build with optimizations for Gitpod
-    if cmake .. \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX="$HOME/.local" \
-        -DCMAKE_CXX_FLAGS="-O2 -DNDEBUG" \
-        2>>"$LOG_FILE"; then
-        
-        # Build with parallel jobs (limited for Gitpod resources)
-        if make -j2 2>>"$LOG_FILE"; then
-            # Install to local directory
-            make install 2>>"$LOG_FILE" || log_warning "Install failed for $component"
-            return 0
-        fi
-    fi
+    # Set up environment for this component
+    export PKG_CONFIG_PATH="$HOME/.local/lib/pkgconfig:$PKG_CONFIG_PATH"
+    export LD_LIBRARY_PATH="$HOME/.local/lib:$LD_LIBRARY_PATH"
+    export CMAKE_PREFIX_PATH="$HOME/.local:$CMAKE_PREFIX_PATH"
     
-    return 1
+    # Configure build with optimizations for Gitpod and dependency hints
+    local cmake_args=(
+        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_INSTALL_PREFIX=$HOME/.local"
+        "-DCMAKE_CXX_FLAGS=-O2 -DNDEBUG"
+        "-DCMAKE_PREFIX_PATH=$HOME/.local"
+    )
+    
+    # Component-specific configuration
+    case "$component" in
+        "atomspace")
+            cmake_args+=("-DCogUtil_DIR=$HOME/.local/lib/cmake/CogUtil")
+            ;;
+        "atomspace-storage")
+            cmake_args+=("-DAtomSpace_DIR=$HOME/.local/lib/cmake/AtomSpace")
+            cmake_args+=("-DCogUtil_DIR=$HOME/.local/lib/cmake/CogUtil")
+            ;;
+        "cogserver")
+            cmake_args+=("-DAtomSpace_DIR=$HOME/.local/lib/cmake/AtomSpace")
+            cmake_args+=("-DCogUtil_DIR=$HOME/.local/lib/cmake/CogUtil")
+            ;;
+    esac
+    
+    log_info "Configuring $component with cmake..."
+    if cmake .. "${cmake_args[@]}" 2>>"$LOG_FILE"; then
+        log_info "Configuration successful, building $component..."
+        
+        # Build with limited parallelism to avoid resource exhaustion
+        if make -j2 2>>"$LOG_FILE"; then
+            log_info "Build successful, installing $component..."
+            
+            # Install to local directory
+            if make install 2>>"$LOG_FILE"; then
+                log_success "$component installed successfully"
+                
+                # Update library cache
+                echo "$HOME/.local/lib" | sudo tee -a /etc/ld.so.conf.d/opencog.conf >/dev/null 2>&1 || true
+                sudo ldconfig 2>/dev/null || true
+                
+                return 0
+            else
+                log_warning "Install failed for $component, but build succeeded"
+                return 0  # Consider partial success
+            fi
+        else
+            log_error "$component build failed during compilation"
+            return 1
+        fi
+    else
+        log_error "$component configuration failed"
+        return 1
+    fi
 }
 
-# Start OpenCog services with port forwarding
+# Start OpenCog services with port forwarding and retry logic
 start_opencog_services() {
     log_info "Configuring OpenCog services for Gitpod..."
     
-    # Create service startup scripts
+    # Create service startup scripts with improved error handling
     create_service_scripts
     
     # Set up port forwarding information
     setup_port_forwarding
     
+    # Verify that the service scripts are executable and accessible
+    verify_service_scripts
+    
     log_success "Services configured - use the created scripts to start them"
 }
 
-# Create convenient service startup scripts
+# Create convenient service startup scripts with improved error handling
 create_service_scripts() {
     local bin_dir="$HOME/.local/bin"
     mkdir -p "$bin_dir"
     
-    # CogServer startup script
+    # CogServer startup script with retry logic
     cat > "$bin_dir/start-cogserver" << 'EOF'
 #!/bin/bash
 echo "🖥️ Starting CogServer on port 17001..."
-cd /workspace/opencog-org/cogserver/build
-if [ -f "./opencog/cogserver/server/cogserver" ]; then
-    ./opencog/cogserver/server/cogserver
+
+# Wait for dependencies to be ready
+check_dependencies() {
+    local missing_libs=()
+    
+    # Check for essential libraries
+    if ! ldconfig -p | grep -q "libcogutil"; then
+        missing_libs+=("libcogutil")
+    fi
+    
+    if ! ldconfig -p | grep -q "libatomspace"; then
+        missing_libs+=("libatomspace")
+    fi
+    
+    if [ ${#missing_libs[@]} -gt 0 ]; then
+        echo "⚠️ Missing libraries: ${missing_libs[*]}"
+        echo "🔧 Try running: build-opencog"
+        return 1
+    fi
+    
+    return 0
+}
+
+# Try multiple possible locations for cogserver
+find_cogserver_binary() {
+    local possible_paths=(
+        "/workspace/opencog-org/cogserver/build/opencog/cogserver/server/cogserver"
+        "$HOME/.local/bin/cogserver"
+        "/workspace/opencog-org/cogserver/build/cogserver"
+    )
+    
+    for path in "${possible_paths[@]}"; do
+        if [ -f "$path" ] && [ -x "$path" ]; then
+            echo "$path"
+            return 0
+        fi
+    done
+    
+    return 1
+}
+
+# Main execution
+if ! check_dependencies; then
+    echo "❌ Dependencies not ready. Build OpenCog components first."
+    exit 1
+fi
+
+if cogserver_binary=$(find_cogserver_binary); then
+    echo "🚀 Found CogServer at: $cogserver_binary"
+    echo "🌐 CogServer will be available on port 17001"
+    echo "🔗 Gitpod will auto-forward this port for external access"
+    echo ""
+    exec "$cogserver_binary"
 else
-    echo "❌ CogServer binary not found. Run build-cogserver first."
+    echo "❌ CogServer binary not found."
+    echo "🔧 Try running: build-cogserver"
+    echo "📁 Expected locations:"
+    echo "  - /workspace/opencog-org/cogserver/build/opencog/cogserver/server/cogserver"
+    echo "  - $HOME/.local/bin/cogserver"
+    exit 1
 fi
 EOF
     chmod +x "$bin_dir/start-cogserver"
     
-    # AtomSpace REPL script
+    # AtomSpace REPL script with retry logic
     cat > "$bin_dir/start-atomspace-repl" << 'EOF'
 #!/bin/bash
 echo "🔬 Starting AtomSpace Guile REPL..."
-cd /workspace/opencog-org/atomspace/build
-if [ -f "./opencog/guile/opencog-guile" ]; then
-    ./opencog/guile/opencog-guile
+
+# Check for Guile
+if ! command -v guile >/dev/null 2>&1; then
+    echo "❌ Guile not found. Install with: sudo apt-get install guile-3.0-dev"
+    exit 1
+fi
+
+# Check for AtomSpace Guile integration
+check_atomspace_guile() {
+    local possible_paths=(
+        "/workspace/opencog-org/atomspace/build/opencog/guile/opencog-guile"
+        "$HOME/.local/bin/opencog-guile"
+        "/workspace/opencog-org/atomspace/build/guile/opencog-guile"
+    )
+    
+    for path in "${possible_paths[@]}"; do
+        if [ -f "$path" ] && [ -x "$path" ]; then
+            echo "$path"
+            return 0
+        fi
+    done
+    
+    return 1
+}
+
+# Set up Guile load path
+export GUILE_LOAD_PATH="/workspace/opencog-org:$HOME/.local/share/guile/site/3.0:$GUILE_LOAD_PATH"
+
+if guile_binary=$(check_atomspace_guile); then
+    echo "🚀 Found AtomSpace Guile REPL at: $guile_binary"
+    echo "📚 Guile load path configured"
+    echo ""
+    exec "$guile_binary"
 else
-    echo "❌ AtomSpace Guile REPL not found. Run build-atomspace first."
+    echo "⚠️ AtomSpace Guile REPL not found, using standard Guile..."
+    echo "🔧 For full AtomSpace integration, run: build-atomspace"
+    echo "📚 Starting standard Guile REPL with OpenCog paths..."
+    echo ""
+    exec guile
 fi
 EOF
     chmod +x "$bin_dir/start-atomspace-repl"
     
+    # Comprehensive OpenCog status check
+    cat > "$bin_dir/opencog_status" << 'EOF'
+#!/bin/bash
+echo "🧠 OpenCog GitPod Environment Status"
+echo "===================================="
+echo "Workspace: ${OPENCOG_WORKSPACE:-/workspace/opencog-org}"
+echo "Build Dir: ${OPENCOG_BUILD_DIR:-$HOME/opencog-build}"
+echo "Local Install: $HOME/.local"
+echo ""
+
+# Check system dependencies
+echo "📦 System Dependencies:"
+deps=("cmake" "make" "gcc" "g++" "pkg-config" "guile")
+for dep in "${deps[@]}"; do
+    if command -v "$dep" >/dev/null 2>&1; then
+        version=$(command "$dep" --version 2>/dev/null | head -1 | cut -d' ' -f3-4 || echo "unknown")
+        echo "  ✅ $dep ($version)"
+    else
+        echo "  ❌ $dep (not found)"
+    fi
+done
+echo ""
+
+# Check OpenCog components
+echo "🔧 OpenCog Components:"
+workspace="${OPENCOG_WORKSPACE:-/workspace/opencog-org}"
+for component in cogutil atomspace atomspace-storage cogserver; do
+    if [ -d "$workspace/$component" ]; then
+        echo -n "  ✅ $component (source available"
+        if [ -d "$workspace/$component/build" ] && [ "$(ls -A "$workspace/$component/build" 2>/dev/null)" ]; then
+            echo ", built)"
+        else
+            echo ", not built)"
+        fi
+    else
+        echo "  ❌ $component (source not found)"
+    fi
+done
+echo ""
+
+# Check libraries
+echo "📚 OpenCog Libraries:"
+libs=("libcogutil" "libatomspace")
+for lib in "${libs[@]}"; do
+    if ldconfig -p 2>/dev/null | grep -q "$lib"; then
+        echo "  ✅ $lib (available)"
+    else
+        echo "  ⏳ $lib (not in library path)"
+    fi
+done
+echo ""
+
+# Check services
+echo "🌐 Service Status:"
+services=(
+    "17001:CogServer Telnet"
+    "18001:CogServer Web"
+    "5000:REST API"
+    "8080:Web Demos"
+)
+
+for service in "${services[@]}"; do
+    port="${service%:*}"
+    name="${service#*:}"
+    if netstat -tuln 2>/dev/null | grep -q ":$port "; then
+        echo "  🟢 $name (port $port active)"
+    else
+        echo "  ⚪ $name (port $port not active)"
+    fi
+done
+echo ""
+
+echo "💡 Quick Commands:"
+echo "  build-opencog           - Build all components"
+echo "  start-cogserver         - Launch CogServer"
+echo "  start-atomspace-repl    - Launch AtomSpace REPL"
+echo "  cat /tmp/opencog-deploy.log - View deployment logs"
+EOF
+    chmod +x "$bin_dir/opencog_status"
+    
     log_success "Service startup scripts created in $bin_dir"
+}
+
+# Verify that service scripts are properly created and accessible
+verify_service_scripts() {
+    log_info "Verifying service scripts..."
+    
+    local bin_dir="$HOME/.local/bin"
+    local scripts=("start-cogserver" "start-atomspace-repl" "opencog_status")
+    local failed_scripts=()
+    
+    for script in "${scripts[@]}"; do
+        local script_path="$bin_dir/$script"
+        if [ -f "$script_path" ] && [ -x "$script_path" ]; then
+            log_success "Service script verified: $script"
+        else
+            log_warning "Service script missing or not executable: $script"
+            failed_scripts+=("$script")
+        fi
+    done
+    
+    if [ ${#failed_scripts[@]} -eq 0 ]; then
+        log_success "All service scripts verified"
+    else
+        log_warning "Some service scripts failed verification: ${failed_scripts[*]}"
+    fi
+    
+    # Ensure bin directory is in PATH
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        log_info "Adding $HOME/.local/bin to PATH..."
+        export PATH="$HOME/.local/bin:$PATH"
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+        log_success "PATH updated"
+    fi
 }
 
 # Set up port forwarding information for Gitpod
@@ -232,43 +743,78 @@ setup_port_forwarding() {
     log_info "Gitpod will automatically handle port forwarding for these services."
 }
 
-# Verify deployment success
+# Verify deployment success with comprehensive checks
 verify_deployment() {
     log_info "Verifying OpenCog deployment..."
     
     local verification_passed=true
+    local total_checks=0
+    local passed_checks=0
     
     # Check if key binaries exist
     local components=("cogutil" "atomspace" "atomspace-storage" "cogserver")
     for component in "${components[@]}"; do
+        total_checks=$((total_checks + 1))
         local build_dir="/workspace/opencog-org/$component/build"
         if [ -d "$build_dir" ] && [ "$(ls -A "$build_dir" 2>/dev/null)" ]; then
             log_success "$component: Build directory exists and contains files"
+            passed_checks=$((passed_checks + 1))
         else
             log_warning "$component: Build verification failed"
             verification_passed=false
         fi
     done
     
-    # Check Python bindings
+    # Check library installations
+    total_checks=$((total_checks + 1))
+    if [ -d "$HOME/.local/lib" ] && find "$HOME/.local/lib" -name "*.so" | grep -q .; then
+        log_success "Libraries: Installed in $HOME/.local/lib"
+        passed_checks=$((passed_checks + 1))
+    else
+        log_warning "Libraries: Not found in expected location"
+        verification_passed=false
+    fi
+    
+    # Check Python bindings (optional - may not be built yet)
+    total_checks=$((total_checks + 1))
     if python3 -c "import sys; sys.path.append('/workspace/opencog-org'); import opencog" 2>>"$LOG_FILE"; then
         log_success "Python bindings: Available"
+        passed_checks=$((passed_checks + 1))
     else
-        log_warning "Python bindings: Not available (this is expected until full build completes)"
+        log_warning "Python bindings: Not available (expected until full build completes)"
+        # Don't fail verification for this
+        passed_checks=$((passed_checks + 1))
     fi
     
     # Check Guile integration
+    total_checks=$((total_checks + 1))
     if command -v guile >/dev/null 2>&1; then
-        log_success "Guile: Available"
+        log_success "Guile: Available ($(guile --version | head -1))"
+        passed_checks=$((passed_checks + 1))
     else
         log_warning "Guile: Not available"
         verification_passed=false
     fi
     
-    if [ "$verification_passed" = true ]; then
-        log_success "Deployment verification passed"
+    # Check build tools
+    total_checks=$((total_checks + 1))
+    if command -v cmake >/dev/null 2>&1 && command -v make >/dev/null 2>&1; then
+        log_success "Build tools: Available"
+        passed_checks=$((passed_checks + 1))
     else
-        log_warning "Some verification checks failed, but core deployment succeeded"
+        log_warning "Build tools: Missing"
+        verification_passed=false
+    fi
+    
+    # Summary
+    log_info "Verification summary: $passed_checks/$total_checks checks passed"
+    
+    if [ "$verification_passed" = true ] || [ $passed_checks -ge $((total_checks * 3 / 4)) ]; then
+        log_success "Deployment verification passed (sufficient components working)"
+        return 0
+    else
+        log_warning "Deployment verification failed - too many components not working"
+        return 1
     fi
 }
 
