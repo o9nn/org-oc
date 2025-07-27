@@ -235,7 +235,7 @@ install_fallback_packages() {
         "libgsl-dev" "pkg-config" "cython3" "libssl-dev"
         "libffi-dev" "libbz2-dev" "libreadline-dev" 
         "libsqlite3-dev" "llvm" "libncurses5-dev"
-        "libncursesw5-dev" "xz-utils" "tk-dev"
+        "libncursesw5-dev" "xz-utils" "tk-dev" "valgrind"
     )
     
     for package in "${packages[@]}"; do
