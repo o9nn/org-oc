@@ -1,0 +1,34 @@
+# .github/workflows/cogserv.yml
+
+name: cogserv
+
+on:
+  push:
+    branches: main
+  pull_request:
+    branches: main
+
+jobs:
+  build-and-test:
+    name: Build and Install CogServer
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libboost-all-dev guile-3.0-dev cython3 python3-nose valgrind doxygen
+          
+      - name: Install Cython
+        run: python3 -m pip install --upgrade pip cython
+
+      - name: build & install opencog
+        run: |
+          mkdir -p cogutil/build/ && cd cogutil/build && cmake .. && sudo make install && sudo ldconfig && cd ../..
+          mkdir -p atomspace/build/ && cd atomspace/build && cmake .. && sudo make install && sudo ldconfig && cd ../..
+          mkdir -p atomspace-storage/build/ && cd atomspace-storage/build && cmake .. && sudo make install && sudo ldconfig && cd ../..
+          mkdir -p cogserver/build/ && cd cogserver/build && cmake .. && sudo make install && sudo ldconfig && cd ../..
+
+
