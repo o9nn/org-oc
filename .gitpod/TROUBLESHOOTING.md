@@ -89,7 +89,7 @@ export PATH="/var/guix/profiles/per-user/gitpod/current-guix/bin:$PATH"
 # Use fallback installation
 sudo apt-get update
 sudo apt-get install -y build-essential cmake libboost-all-dev \
-    libcppunit-dev libguile-3.0-dev python3-dev python3-pip
+    libcppunit-dev guile-3.0-dev python3-dev python3-pip
 
 # Install Python packages
 pip3 install --user numpy scipy cython nose
@@ -133,7 +133,7 @@ pkg-config --list-all | grep -E "(boost|guile|gsl)"
 cmake .. -DCMAKE_BUILD_TYPE=Debug
 
 # If still failing, install missing dependencies
-sudo apt-get install -y libboost-all-dev libguile-3.0-dev libgsl-dev
+sudo apt-get install -y libboost-all-dev guile-3.0-dev libgsl-dev
 ```
 
 #### Build Errors
@@ -423,7 +423,7 @@ source .gitpod/setup.sh
 ```bash
 # Install only essentials
 sudo apt-get install -y build-essential cmake git
-sudo apt-get install -y libboost-dev libguile-3.0-dev
+sudo apt-get install -y libboost-dev guile-3.0-dev
 
 # Build minimal AtomSpace
 cd /workspace/opencog-org/cogutil
