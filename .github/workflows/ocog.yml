@@ -19,20 +19,20 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake libboost-all-dev librocksdb-dev guile-3.0-dev cython3 python3-nose valgrind doxygen
+          sudo apt-get install -y build-essential cmake libboost-all-dev librocksdb-dev guile-3.0-dev cython3 python3-nose valgrind doxygen uuid-dev
           
       - name: Install Cython
         run: python3 -m pip install --upgrade pip cython
 
       - name: build & install opencog
         run: |
-          mkdir -p cogutil/build/ && cd cogutil/build && cmake .. && sudo make install && cd ../..
-          mkdir -p atomspace/build/ && cd atomspace/build && cmake .. && sudo make install && cd ../..
-          mkdir -p atomspace-storage/build/ && cd atomspace-storage/build && cmake .. && sudo make install && cd ../..
-          mkdir -p cogserver/build/ && cd cogserver/build && cmake .. && sudo make install && cd ../..
-          mkdir -p attention/build/ && cd attention/build && cmake .. && sudo make install && cd ../..
-          mkdir -p unify/build/ && cd unify/build && cmake .. && sudo make install && cd ../..
-          mkdir -p ure/build/ && cd ure/build && cmake .. && sudo make install && cd ../..
-          mkdir -p lg-atomese/build/ && cd lg-atomese/build && cmake .. && sudo make install && cd ../..
-          mkdir -p opencog/build/ && cd opencog/build && cmake .. && sudo make install && cd ../..
+          mkdir -p cogutil/build/ && cd cogutil/build && cmake .. && sudo make install && sudo ldconfig && cd ../..
+          mkdir -p atomspace/build/ && cd atomspace/build && cmake .. && sudo make install && sudo ldconfig && cd ../..
+          mkdir -p atomspace-storage/build/ && cd atomspace-storage/build && cmake .. && sudo make install && sudo ldconfig && cd ../..
+          mkdir -p cogserver/build/ && cd cogserver/build && cmake .. && sudo make install && sudo ldconfig && cd ../..
+          mkdir -p attention/build/ && cd attention/build && cmake .. && sudo make install && sudo ldconfig && cd ../..
+          mkdir -p unify/build/ && cd unify/build && cmake .. && sudo make install && sudo ldconfig && cd ../..
+          mkdir -p ure/build/ && cd ure/build && cmake .. && sudo make install && sudo ldconfig && cd ../..
+          mkdir -p lg-atomese/build/ && cd lg-atomese/build && cmake .. && sudo make install && sudo ldconfig && cd ../..
+          mkdir -p opencog/build/ && cd opencog/build && cmake .. && sudo make install && sudo ldconfig && cd ../..
 
