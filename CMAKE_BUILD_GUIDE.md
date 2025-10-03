@@ -48,6 +48,11 @@ Build any individual component:
 make <component-name>
 ```
 
+Install any individual component:
+```bash
+make install-<component-name>
+```
+
 Available components include:
 - **Foundation Layer**: cogutil, moses, blender_api_msgs
 - **Core Layer**: atomspace, atomspace-rocks, atomspace-pgres, atomspace-ipfs, etc.
@@ -76,11 +81,41 @@ make Integration-layer  # Build all integration components
 make Specialized-layer  # Build all specialized components
 ```
 
+Install entire dependency layers:
+```bash
+make install-Foundation-layer    # Install all foundation components
+make install-Core-layer         # Install all core components  
+make install-Logic-layer        # Install all logic components
+make install-Cognitive-layer    # Install all cognitive components
+make install-Advanced-layer     # Install all advanced components
+make install-Learning-layer     # Install all learning components
+make install-Language-layer     # Install all language components
+make install-Robotics-layer     # Install all robotics components
+make install-Integration-layer  # Install all integration components
+make install-Specialized-layer  # Install all specialized components
+```
+
+Uninstall entire dependency layers:
+```bash
+make uninstall-Foundation-layer    # Uninstall all foundation components
+make uninstall-Core-layer         # Uninstall all core components  
+make uninstall-Logic-layer        # Uninstall all logic components
+make uninstall-Cognitive-layer    # Uninstall all cognitive components
+make uninstall-Advanced-layer     # Uninstall all advanced components
+make uninstall-Learning-layer     # Uninstall all learning components
+make uninstall-Language-layer     # Uninstall all language components
+make uninstall-Robotics-layer     # Uninstall all robotics components
+make uninstall-Integration-layer  # Uninstall all integration components
+make uninstall-Specialized-layer  # Uninstall all specialized components
+```
+
 ### Collective Targets
 
 ```bash
 make configure-all      # Configure all available components
 make all-components     # Build all available components
+make install-all        # Install all available components
+make uninstall-all      # Uninstall all available components
 make list-components    # Show available build targets and help
 ```
 
@@ -158,6 +193,102 @@ The system will:
 3. Report the build result
 
 If a component fails to build due to missing dependencies, the error will be contained to that component and won't affect others.
+
+## Installing Components
+
+The unified build system provides centralized installation functionality for managing OpenCog components. Each component can be installed individually or as part of layer-based groups.
+
+### Individual Component Installation
+
+Install any individual component:
+```bash
+make install-cogutil     # Install the cogutil component
+make install-atomspace   # Install the atomspace component
+```
+
+The system will:
+1. Build the component (if not already built)
+2. Install the component using its CMake install target
+3. Place files in the system-wide installation directories
+
+### Layer-Based Installation
+
+Install entire dependency layers at once:
+```bash
+make install-Foundation-layer   # Install all foundation components
+make install-Core-layer        # Install all core components
+```
+
+This is particularly useful for setting up dependencies in the correct order.
+
+### Complete Installation
+
+Install all available components:
+```bash
+make install-all
+```
+
+This will build and install every available component in the repository.
+
+### Installation Requirements
+
+- **Root Access**: Most installations require root/sudo access to install to system directories
+- **Build Dependencies**: Components must be successfully built before installation
+- **Disk Space**: Ensure adequate disk space for all component installations
+- **Dependencies**: Some components may require others to be installed first
+
+### Installation Locations
+
+Components install to standard system locations:
+- **Libraries**: `/usr/local/lib` or `/usr/lib`
+- **Headers**: `/usr/local/include` or `/usr/include`
+- **Executables**: `/usr/local/bin` or `/usr/bin`
+- **Documentation**: `/usr/local/share/doc` or `/usr/share/doc`
+
+Individual components may customize their installation paths through their own CMakeLists.txt files.
+
+## Uninstalling Components
+
+The unified build system provides uninstallation functionality to remove installed OpenCog components from your system.
+
+### Individual Component Uninstallation
+
+Uninstall any individual component:
+```bash
+make uninstall-cogutil     # Uninstall the cogutil component
+make uninstall-atomspace   # Uninstall the atomspace component
+```
+
+The system will:
+1. Locate the component's install manifest (if available)
+2. Remove all files listed in the manifest
+3. Report any files that couldn't be removed
+
+### Layer-Based Uninstallation
+
+Uninstall entire dependency layers:
+```bash
+make uninstall-Foundation-layer   # Uninstall all foundation components
+make uninstall-Core-layer        # Uninstall all core components
+```
+
+This removes all components in the specified layer.
+
+### Complete Uninstallation
+
+Uninstall all components:
+```bash
+make uninstall-all
+```
+
+This will remove every installed OpenCog component from the system.
+
+### Uninstallation Limitations
+
+- **Install Manifests**: Uninstallation relies on CMake install manifests. If a component was installed without generating a manifest, automatic uninstallation may not be possible.
+- **Root Access**: Uninstallation typically requires the same permissions as installation (root/sudo).
+- **Manual Cleanup**: Some components may require manual cleanup of configuration files or data directories.
+- **Dependency Order**: Uninstall components in reverse dependency order to avoid issues.
 
 ## System Requirements
 
