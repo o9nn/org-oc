@@ -1,0 +1,199 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autonomic-triad
+  labels:
+    app: cognitive-cities
+    triad: autonomic
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      triad: autonomic
+  template:
+    metadata:
+      labels:
+        app: cognitive-cities
+        triad: autonomic
+    spec:
+      containers:
+      - name: monitoring-service
+        image: cognitive-cities/monitoring-service:latest
+        ports:
+        - containerPort: 8021
+        env:
+        - name: POLARITY
+          value: "sympathetic"
+        - name: MONITORING_ACTIVE
+          value: "true"
+        - name: TRIAD
+          value: "autonomic"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8021
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8021
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          
+      - name: state-management
+        image: cognitive-cities/state-management:latest
+        ports:
+        - containerPort: 8022
+        env:
+        - name: STATE_PERSISTENCE
+          value: "true"
+        - name: TRIAD
+          value: "autonomic"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8022
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8022
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          
+      - name: autonomic-process-director
+        image: cognitive-cities/autonomic-process-director:latest
+        ports:
+        - containerPort: 8023
+        env:
+        - name: ROLE
+          value: "background_processes"
+        - name: TRIAD
+          value: "autonomic"
+        resources:
+          requests:
+            memory: "384Mi"
+            cpu: "500m"
+          limits:
+            memory: "768Mi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8023
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8023
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          
+      - name: autonomic-processing-service
+        image: cognitive-cities/autonomic-processing-service:latest
+        ports:
+        - containerPort: 8024
+        env:
+        - name: PROCESSING_TYPE
+          value: "emotive"
+        - name: TRIAD
+          value: "autonomic"
+        resources:
+          requests:
+            memory: "384Mi"
+            cpu: "500m"
+          limits:
+            memory: "768Mi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8024
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8024
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          
+      - name: trigger-service
+        image: cognitive-cities/trigger-service:latest
+        ports:
+        - containerPort: 8025
+        env:
+        - name: POLARITY
+          value: "parasympathetic"
+        - name: TRIAD
+          value: "autonomic"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8025
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8025
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: autonomic-triad-service
+  labels:
+    app: cognitive-cities
+    triad: autonomic
+spec:
+  selector:
+    triad: autonomic
+  ports:
+  - name: monitoring-service
+    protocol: TCP
+    port: 8021
+    targetPort: 8021
+  - name: state-management
+    protocol: TCP
+    port: 8022
+    targetPort: 8022
+  - name: process-director
+    protocol: TCP
+    port: 8023
+    targetPort: 8023
+  - name: processing-service
+    protocol: TCP
+    port: 8024
+    targetPort: 8024
+  - name: trigger-service
+    protocol: TCP
+    port: 8025
+    targetPort: 8025
+  type: ClusterIP

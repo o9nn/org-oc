@@ -1,0 +1,174 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cerebral-triad
+  labels:
+    app: cognitive-cities
+    triad: cerebral
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      triad: cerebral
+  template:
+    metadata:
+      labels:
+        app: cognitive-cities
+        triad: cerebral
+    spec:
+      containers:
+      - name: thought-service
+        image: cognitive-cities/thought-service:latest
+        ports:
+        - containerPort: 8001
+        env:
+        - name: HEMISPHERE
+          value: "right"
+        - name: PROCESSING_TYPE
+          value: "intuitive"
+        - name: TRIAD
+          value: "cerebral"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8001
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          
+      - name: processing-director
+        image: cognitive-cities/processing-director:latest
+        ports:
+        - containerPort: 8002
+        env:
+        - name: ROLE
+          value: "central_coordination"
+        - name: ECAN_ENABLED
+          value: "true"
+        - name: ATTENTION_BUDGET
+          value: "1000"
+        - name: TRIAD
+          value: "cerebral"
+        resources:
+          requests:
+            memory: "384Mi"
+            cpu: "500m"
+          limits:
+            memory: "768Mi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8002
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          
+      - name: processing-service
+        image: cognitive-cities/processing-service:latest
+        ports:
+        - containerPort: 8003
+        env:
+        - name: PROCESSING_TYPE
+          value: "analytical"
+        - name: HEMISPHERE
+          value: "neutral"
+        - name: TRIAD
+          value: "cerebral"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8003
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8003
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          
+      - name: output-service
+        image: cognitive-cities/output-service:latest
+        ports:
+        - containerPort: 8004
+        env:
+        - name: HEMISPHERE
+          value: "left"
+        - name: PROCESSING_FOCUS
+          value: "applied_technique"
+        - name: TRIAD
+          value: "cerebral"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8004
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8004
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cerebral-triad-service
+  labels:
+    app: cognitive-cities
+    triad: cerebral
+spec:
+  selector:
+    triad: cerebral
+  ports:
+  - name: thought-service
+    protocol: TCP
+    port: 8001
+    targetPort: 8001
+  - name: processing-director
+    protocol: TCP
+    port: 8002
+    targetPort: 8002
+  - name: processing-service
+    protocol: TCP
+    port: 8003
+    targetPort: 8003
+  - name: output-service
+    protocol: TCP
+    port: 8004
+    targetPort: 8004
+  type: ClusterIP
