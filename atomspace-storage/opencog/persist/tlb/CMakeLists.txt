@@ -4,8 +4,7 @@ ADD_LIBRARY (tlb SHARED
 )
 
 TARGET_LINK_LIBRARIES(tlb
-	atombase
-	atomspace
+	${ATOMSPACE_LIBRARIES}
 	${COGUTIL_LIBRARY}
 )
 

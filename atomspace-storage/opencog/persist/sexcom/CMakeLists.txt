@@ -12,9 +12,7 @@ TARGET_LINK_LIBRARIES(sexcom
 	storage-types
 	persist-proxy
 	persist
-	atomspace
-	execution
-	atombase
+	${ATOMSPACE_LIBRARIES}
 	${COGUTIL_LIBRARY}
 )
 

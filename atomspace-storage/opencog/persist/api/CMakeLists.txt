@@ -13,7 +13,7 @@ ADD_LIBRARY (persist SHARED
 
 TARGET_LINK_LIBRARIES(persist
 	storage-types
-	atomspace
+	${ATOMSPACE_LIBRARIES}
 	smob
 )
 
