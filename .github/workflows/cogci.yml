@@ -258,7 +258,14 @@ jobs:
         run: |
           cd atomspace/build
           sudo make install
+          
+          # Configure system library paths for opencog libraries
+          echo "/usr/local/lib/opencog" | sudo tee /etc/ld.so.conf.d/opencog.conf
           sudo ldconfig
+          
+          # Verify library installation
+          echo "Installed atomspace libraries:"
+          ls -la /usr/local/lib/opencog/ || true
           
           # Create consistent CMake config files
           sudo python3 ../../scripts/create_cmake_configs.py
@@ -2229,7 +2236,12 @@ jobs:
             mkdir -p build
           fi
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release
+          
+          # Set library search paths for linking
+          export LIBRARY_PATH="/usr/local/lib/opencog:$LIBRARY_PATH"
+          export LD_LIBRARY_PATH="/usr/local/lib/opencog:$LD_LIBRARY_PATH"
+          
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_LIBRARY_PATH="/usr/local/lib/opencog"
           make -j$(nproc)
           sudo make install
           sudo ldconfig
