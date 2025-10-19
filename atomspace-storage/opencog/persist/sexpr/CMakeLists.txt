@@ -7,8 +7,7 @@ ADD_LIBRARY (sexpr SHARED
 )
 
 TARGET_LINK_LIBRARIES(sexpr
-	atomspace
-	atombase
+	${ATOMSPACE_LIBRARIES}
 	${COGUTIL_LIBRARY}
 )
 

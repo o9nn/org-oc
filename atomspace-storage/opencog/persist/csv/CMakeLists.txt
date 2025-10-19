@@ -6,8 +6,7 @@ ADD_LIBRARY (csv SHARED
 )
 
 TARGET_LINK_LIBRARIES(csv
-	atomspace
-	atombase
+	${ATOMSPACE_LIBRARIES}
 	${COGUTIL_LIBRARY}
 )
 
@@ -28,7 +27,7 @@ ADD_LIBRARY (csv-table SHARED
 
 TARGET_LINK_LIBRARIES(csv-table
 	csv
-	atomspace
+	${ATOMSPACE_LIBRARIES}
 	smob
 )
 

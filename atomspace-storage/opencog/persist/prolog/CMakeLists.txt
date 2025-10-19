@@ -6,9 +6,7 @@ ADD_LIBRARY(datalog SHARED
 )
 
 TARGET_LINK_LIBRARIES(datalog
-	atomspace
-	execution
-	atombase
+	${ATOMSPACE_LIBRARIES}
 	${COGUTIL_LIBRARY}
 )
 
