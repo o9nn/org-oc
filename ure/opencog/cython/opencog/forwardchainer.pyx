@@ -1,6 +1,6 @@
 from opencog.atomspace import types
 from cython.operator cimport dereference as deref, preincrement as inc
-from opencog.atomspace cimport cHandle, Atom, AtomSpace, TruthValue
+from opencog.atomspace cimport cHandle, Atom, AtomSpace, TruthValue, cAtomSpace
 from ure cimport cForwardChainer
 
 # Create a Cython extension type which holds a C++ instance
@@ -44,7 +44,7 @@ cdef class ForwardChainer:
 
     def get_results(self):
         cdef cHandle res_handle = self.chainer.get_results()
-        cdef Atom result = Atom.createAtom(res_handle)
+        cdef Atom result = Atom(res_handle)
         return result
 
     def __dealloc__(self):

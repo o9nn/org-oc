@@ -503,7 +503,7 @@ jobs:
 
   atomspace-rocks:
     runs-on: ubuntu-latest
-    needs: [atomspace]
+    needs: [atomspace-storage]
     steps:
       - uses: actions/checkout@v4
 
@@ -2082,7 +2082,7 @@ jobs:
   # ==== Server Infrastructure ====
   cogserver:
     runs-on: ubuntu-latest
-    needs: [atomspace]
+    needs: [atomspace-storage]
     steps:
       - uses: actions/checkout@v4
       
@@ -2744,7 +2744,7 @@ jobs:
   # ==== Cognitive Systems ====
   attention:
     runs-on: ubuntu-latest
-    needs: [atomspace]
+    needs: [cogserver]
     steps:
       - uses: actions/checkout@v4
 
@@ -3063,7 +3063,7 @@ jobs:
   # ==== Language Processing ====
   lg-atomese:
     runs-on: ubuntu-latest
-    needs: [atomspace]
+    needs: [atomspace-storage]
     steps:
       - uses: actions/checkout@v4
 
@@ -3419,7 +3419,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake libboost-all-dev guile-3.0-dev cython3 python3-nose python3-rospy python3-catkin-tools python3-dev
+          sudo apt-get install -y build-essential cmake libboost-all-dev guile-3.0-dev cython3 python3-nose python3-dev
 
       - name: Install Cython
         run: python3 -m pip install --upgrade pip cython
