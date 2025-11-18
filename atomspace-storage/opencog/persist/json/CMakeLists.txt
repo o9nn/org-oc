@@ -9,9 +9,7 @@ ADD_LIBRARY (json SHARED
 )
 
 TARGET_LINK_LIBRARIES(json
-	atomspace
-	execution
-	atombase
+	${ATOMSPACE_LIBRARIES}
 	${COGUTIL_LIBRARY}
 )
 

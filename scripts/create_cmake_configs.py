@@ -45,6 +45,9 @@ set({name}_INCLUDE_DIRS "/usr/local/include")
 set({name.upper()}_LIBRARY_DIRS "/usr/local/lib/opencog")
 set({name}_LIBRARY_DIRS "/usr/local/lib/opencog")
 
+# Set CMake library search path
+link_directories("/usr/local/lib/opencog")
+
 # Find libraries
 '''
     
@@ -119,7 +122,7 @@ def main():
     create_cmake_config(
         "AtomSpace", 
         "5.0.3",
-        libraries=["atom_types", "value", "atombase", "atomcore", "atomflow", "truthvalue", "clearbox", "execution", "pattern", "query-engine", "smob", "atomspace"],
+        libraries=["atomspace", "atombase", "atomcore", "atomflow", "execution", "truthvalue", "clearbox", "pattern", "query-engine", "smob", "value", "atom_types"],
         dependencies=["CogUtil"]
     )
     

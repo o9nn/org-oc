@@ -33,7 +33,7 @@ TARGET_LINK_LIBRARIES(persist-file
 	fast_load_scm
 	sexcom
 	sexpr
-	atomspace
+	${ATOMSPACE_LIBRARIES}
 	smob
 )
 
