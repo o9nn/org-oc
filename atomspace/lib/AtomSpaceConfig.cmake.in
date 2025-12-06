@@ -6,75 +6,83 @@ include("@CMAKE_INSTALL_PREFIX@/lib/cmake/AtomSpace/AtomSpaceTargets.cmake")
 # but circular dependencies are forbidden by cmake, so dependancy
 # on execution is omitted in atomspace at build time. It should be set
 # here for proper linking.
-set_property(TARGET execution
-	APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-	atomspace
-)
+if(TARGET atomspace::execution)
+	set_property(TARGET atomspace::execution
+		APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+		atomspace::atomspace
+	)
+endif()
 
-set_property(TARGET query-engine
-	APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-	pattern
-	atomspace
-)
+if(TARGET atomspace::query-engine)
+	set_property(TARGET atomspace::query-engine
+		APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+		atomspace::pattern
+		atomspace::atomspace
+	)
+endif()
 
-set_property(TARGET truthvalue
-	APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-	execution
-)
+if(TARGET atomspace::truthvalue)
+	set_property(TARGET atomspace::truthvalue
+		APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+		atomspace::execution
+	)
+endif()
 
-set_property(TARGET atom_types
-	APPEND PROPERTY INTERFACE_LINK_LIBRARIES
-	atombase
-)
+if(TARGET atomspace::atom_types)
+	set_property(TARGET atomspace::atom_types
+		APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+		atomspace::atombase
+	)
+endif()
 
 # These names are used in various projects e.g. opencog, as-moses, etc.
 # XXX FIXME ... they probably should not be! It would be best if the all
 # of the libs were specified i.e. LINK_LIBRARIES(${ATOMSPACE_LIBRARIES})
-set(ATOMSPACE_LIBRARY atomspace)
-set(ATOMSPACE_atombase_LIBRARY atombase)
-set(ATOMSPACE_atomcore_LIBRARY atomcore)
-set(ATOMSPACE_atomflow_LIBRARY atomflow)
-set(ATOMSPACE_atomproto_LIBRARY value)
-set(ATOMSPACE_atomspace_LIBRARY atomspace)
-set(ATOMSPACE_atomtypes_LIBRARY atom_types)
-set(ATOMSPACE_clearbox_LIBRARY clearbox)
-set(ATOMSPACE_execution_LIBRARY execution)
-set(ATOMSPACE_grounded_LIBRARY grounded)
-set(ATOMSPACE_join_LIBRARY join)
-set(ATOMSPACE_json_LIBRARY json)
-set(ATOMSPACE_pattern_LIBRARY pattern)
-set(ATOMSPACE_load_scm_LIBRARY load_scm)
-set(ATOMSPACE_persist_LIBRARY persist)
-set(ATOMSPACE_sexpr_LIBRARY sexpr)
-set(ATOMSPACE_smob_LIBRARY smob)
-set(ATOMSPACE_truthvalue_LIBRARY truthvalue)
-set(ATOMSPACE_value_LIBRARY value)
+set(ATOMSPACE_LIBRARY atomspace::atomspace)
+set(ATOMSPACE_atombase_LIBRARY atomspace::atombase)
+set(ATOMSPACE_atomcore_LIBRARY atomspace::atomcore)
+set(ATOMSPACE_atomflow_LIBRARY atomspace::atomflow)
+set(ATOMSPACE_atomproto_LIBRARY atomspace::value)
+set(ATOMSPACE_atomspace_LIBRARY atomspace::atomspace)
+set(ATOMSPACE_atomtypes_LIBRARY atomspace::atom_types)
+set(ATOMSPACE_clearbox_LIBRARY atomspace::clearbox)
+set(ATOMSPACE_execution_LIBRARY atomspace::execution)
+set(ATOMSPACE_grounded_LIBRARY atomspace::grounded)
+set(ATOMSPACE_join_LIBRARY atomspace::join)
+set(ATOMSPACE_json_LIBRARY atomspace::json)
+set(ATOMSPACE_pattern_LIBRARY atomspace::pattern)
+set(ATOMSPACE_load_scm_LIBRARY atomspace::load_scm)
+set(ATOMSPACE_persist_LIBRARY atomspace::persist)
+set(ATOMSPACE_sexpr_LIBRARY atomspace::sexpr)
+set(ATOMSPACE_smob_LIBRARY atomspace::smob)
+set(ATOMSPACE_truthvalue_LIBRARY atomspace::truthvalue)
+set(ATOMSPACE_value_LIBRARY atomspace::value)
 
 # XXX why are these listed in reverse dependency order?
 # Doesn't the linker care about this?
 set(ATOMSPACE_LIBRARIES
-	atom_types
-	value
-	atombase
-	atomcore
-	atomflow
-	columnvec
-	truthvalue
-	clearbox
-	join
-	pattern
-	query-engine
-	execution
-	grounded
-	smob
-	atomspace
+	atomspace::atom_types
+	atomspace::value
+	atomspace::atombase
+	atomspace::atomcore
+	atomspace::atomflow
+	atomspace::columnvec
+	atomspace::truthvalue
+	atomspace::clearbox
+	atomspace::join
+	atomspace::pattern
+	atomspace::query-engine
+	atomspace::execution
+	atomspace::grounded
+	atomspace::smob
+	atomspace::atomspace
 )
 
 # Python is optional
 IF (HAVE_CYTHON)
-	set(ATOMSPACE_PythonEval_LIBRARY PythonEval)
+	set(ATOMSPACE_PythonEval_LIBRARY atomspace::PythonEval)
 	SET(ATOMSPACE_LIBRARIES
-	    executioncontext
+	    atomspace::executioncontext
 	    ${ATOMSPACE_LIBRARIES}
 	    ${ATOMSPACE_PythonEval_LIBRARY}
 	)

@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+
+include("@CMAKE_INSTALL_PREFIX@/lib/cmake/AtomSpaceStorage/AtomSpaceStorageTargets.cmake")
+
+# Set library variables for backward compatibility
+set(ATOMSPACE_STORAGE_LIBRARY persist)
+set(ATOMSPACE_STORAGE_LIBRARIES persist)
+set(ATOMSPACE_STORAGE_DATA_DIR "@CMAKE_INSTALL_PREFIX@/share/opencog")
+set(ATOMSPACE_STORAGE_INCLUDE_DIR "@CMAKE_INSTALL_PREFIX@/include/")
+set(ATOMSPACE_STORAGE_VERSION "@SEMANTIC_VERSION@")
+set(ATOMSPACE_STORAGE_FOUND 1)
