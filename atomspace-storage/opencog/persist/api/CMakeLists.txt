@@ -14,7 +14,7 @@ ADD_LIBRARY (persist SHARED
 TARGET_LINK_LIBRARIES(persist
 	storage-types
 	${ATOMSPACE_LIBRARIES}
-	smob
+	${ATOMSPACE_smob_LIBRARY}
 )
 
 ADD_GUILE_EXTENSION(SCM_CONFIG persist "opencog-ext-path-persist")

@@ -28,7 +28,7 @@ ADD_LIBRARY (csv-table SHARED
 TARGET_LINK_LIBRARIES(csv-table
 	csv
 	${ATOMSPACE_LIBRARIES}
-	smob
+	${ATOMSPACE_smob_LIBRARY}
 )
 
 ADD_GUILE_EXTENSION(SCM_CONFIG csv-table "opencog-ext-path-csv-table")
