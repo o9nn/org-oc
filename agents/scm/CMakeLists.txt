@@ -1,3 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
 project(scm)
-# Placeholder for future build directives
+
+# Add subdirectories
+ADD_SUBDIRECTORY(pair-agent)
