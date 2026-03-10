@@ -17,11 +17,6 @@ write_basic_package_version_file(
 	COMPATIBILITY SameMajorVersion
 )
 
-# Install export targets (no NAMESPACE to match monorepo convention)
-INSTALL(EXPORT PLNTargets
-	FILE PLNTargets.cmake
-	DESTINATION ${PLN_CMAKE_DIR})
-
 INSTALL(FILES
 	${CMAKE_CURRENT_BINARY_DIR}/PLNConfigVersion.cmake
 	${CMAKE_CURRENT_BINARY_DIR}/PLNConfig.cmake

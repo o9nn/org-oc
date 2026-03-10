@@ -3,12 +3,7 @@ include(CMakePackageConfigHelpers)
 
 set(ConfigPackageLocation lib/cmake/CogAgents)
 
-install(EXPORT CogAgentsTargets
-	FILE CogAgentsTargets.cmake
-	DESTINATION ${ConfigPackageLocation}
-)
-
-configure_package_config_file(CogAgentsConfig.cmake.in
+configure_package_config_file(CogAgents.cmake.in
 	${CMAKE_CURRENT_BINARY_DIR}/CogAgentsConfig.cmake
 	INSTALL_DESTINATION ${ConfigPackageLocation}
 	PATH_VARS CMAKE_INSTALL_PREFIX

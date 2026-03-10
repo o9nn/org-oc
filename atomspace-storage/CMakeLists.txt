@@ -135,7 +135,6 @@ INCLUDE(OpenCogCython)
 
 ADD_SUBDIRECTORY(cmake)
 ADD_SUBDIRECTORY(opencog)
-ADD_SUBDIRECTORY(lib)
 
 IF (CXXTEST_FOUND)
 	ADD_CUSTOM_TARGET(tests)
@@ -207,6 +206,7 @@ FILE(WRITE "${PROJECT_BINARY_DIR}/install_manifest.txt")
 ## atomspace.
 # SEMANTIC_VERSION is used in lib/AtomSpaceStorageConfig.cmake.in
 SET(SEMANTIC_VERSION 1.3.0)
+ADD_SUBDIRECTORY(lib)
 
 ## Cpack configuration
 SET(CPACK_GENERATOR "DEB")
