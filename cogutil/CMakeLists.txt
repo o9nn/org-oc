@@ -94,6 +94,9 @@ ENDIF (CYGWIN)
 # Check for boost. We need dynamic-linked, threaded libs by default.
 SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREADED ON)
+# Force use of FindBoost.cmake module instead of BoostConfig.cmake
+# Ubuntu 24.04's BoostConfig.cmake silently fails with OPTIONAL_COMPONENTS
+SET(Boost_NO_BOOST_CMAKE ON)
 # The minimum boost version required for building.
 SET(MIN_BOOST 1.60)
 
