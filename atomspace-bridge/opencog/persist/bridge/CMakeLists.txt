@@ -1,4 +1,7 @@
 
+LINK_DIRECTORIES(${CMAKE_INSTALL_PREFIX}/lib/opencog)
+LINK_DIRECTORIES(${CMAKE_INSTALL_PREFIX}/lib)
+
 ADD_LIBRARY (persist-bridge SHARED
 	BridgePersistSCM.cc
 	BridgeStorage.cc

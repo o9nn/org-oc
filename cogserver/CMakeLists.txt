@@ -182,7 +182,6 @@ IF(HAVE_ATOMSPACE AND HAVE_COGUTIL)
 ENDIF(HAVE_ATOMSPACE AND HAVE_COGUTIL)
 
 IF(HAVE_SERVER)
-	ADD_SUBDIRECTORY(lib)
 	ADD_SUBDIRECTORY(opencog)
 	# ADD_SUBDIRECTORY(examples EXCLUDE_FROM_ALL)
 	ADD_SUBDIRECTORY(examples)
@@ -247,6 +246,10 @@ FILE(WRITE "${PROJECT_BINARY_DIR}/install_manifest.txt")
 ## It doesn't have a header-file declaring the version similar to cogutil and
 ## atomspace.
 SET(SEMANTIC_VERSION 0.1.4)
+
+IF(HAVE_SERVER)
+	ADD_SUBDIRECTORY(lib)
+ENDIF(HAVE_SERVER)
 
 ## Cpack configuration
 SET(CPACK_GENERATOR "DEB")
