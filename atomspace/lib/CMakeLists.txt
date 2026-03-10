@@ -1,21 +1,28 @@
-# Install atomspace.pc for pkg-config
-CONFIGURE_FILE(atomspace.pc.in atomspace.pc @ONLY)
-INSTALL(FILES
-	${CMAKE_CURRENT_BINARY_DIR}/atomspace.pc
-	DESTINATION
-	lib/pkgconfig)
 
-# Generate and install CMake package config files
-set(INCLUDE_INSTALL_DIR include/)
-set(LIB_INSTALL_DIR lib/)
+# XXX TODO: Why is this stuff in this directory,
+# instead of the `cmake` directory?
 
-set(ATOMSPACE_CMAKE_DIR lib/cmake/AtomSpace)
+# build_type is used in AtomSpaceConfig.cmake.in
+string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type )
+
+export(EXPORT AtomSpaceTargets
+	FILE "${CMAKE_CURRENT_BINARY_DIR}/AtomSpace/AtomSpaceTargets.cmake"
+)
+
+set(ConfigPackageLocation lib/cmake/AtomSpace)
+
+install(EXPORT AtomSpaceTargets
+	FILE AtomSpaceTargets.cmake
+	DESTINATION ${ConfigPackageLocation}
+)
 
 include(CMakePackageConfigHelpers)
+
 configure_package_config_file(AtomSpaceConfig.cmake.in
 	${CMAKE_CURRENT_BINARY_DIR}/AtomSpaceConfig.cmake
-	INSTALL_DESTINATION ATOMSPACE_CMAKE_DIR
-	PATH_VARS INCLUDE_INSTALL_DIR LIB_INSTALL_DIR)
+	INSTALL_DESTINATION lib/AtomSpace/cmake
+	PATH_VARS CMAKE_INSTALL_PREFIX
+)
 
 write_basic_package_version_file(
 	"${CMAKE_CURRENT_BINARY_DIR}/AtomSpaceConfigVersion.cmake"
@@ -23,14 +30,24 @@ write_basic_package_version_file(
 	COMPATIBILITY SameMajorVersion
 )
 
-# Install export targets
-INSTALL(EXPORT AtomSpaceTargets
-	FILE AtomSpaceTargets.cmake
-	NAMESPACE atomspace::
-	DESTINATION ${ATOMSPACE_CMAKE_DIR})
-
 INSTALL(FILES
 	${CMAKE_CURRENT_BINARY_DIR}/AtomSpaceConfigVersion.cmake
 	${CMAKE_CURRENT_BINARY_DIR}/AtomSpaceConfig.cmake
-	DESTINATION
-	${ATOMSPACE_CMAKE_DIR})
+	DESTINATION ${ConfigPackageLocation}
+)
+
+# -----------------------------------------------------------
+
+# A compatible pkgconfig
+configure_package_config_file(atomspace.pc.in
+	${CMAKE_CURRENT_BINARY_DIR}/atomspace.pc
+	INSTALL_DESTINATION lib/pkgconfig
+	PATH_VARS CMAKE_INSTALL_PREFIX
+)
+
+INSTALL(FILES
+	${CMAKE_CURRENT_BINARY_DIR}/atomspace.pc
+	DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig/
+)
+
+# -----------------------------------------------------------
