@@ -129,8 +129,8 @@ public:
     void graph()
     {
         answer += "\ndigraph OpenCog {\n";
-        HandleSet handle_set;
-        space->get_handleset_by_type(handle_set, ATOM, true);
+        HandleSeq handle_set;
+        space->get_handles_by_type(handle_set, ATOM, true);
         for (const Handle& h: handle_set)
             do_nodes(h);
         for (const Handle& h: handle_set)
