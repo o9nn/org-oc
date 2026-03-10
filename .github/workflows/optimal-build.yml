@@ -21,6 +21,9 @@ env:
   CMAKE_BUILD_TYPE: Release
   INSTALL_PREFIX: /usr/local
 
+permissions:
+  contents: read
+
 jobs:
   system_setup:
     name: System Dependencies
