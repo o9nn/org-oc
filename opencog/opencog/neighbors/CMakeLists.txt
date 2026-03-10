@@ -4,7 +4,7 @@ ADD_LIBRARY (neighbors
 )
 
 TARGET_LINK_LIBRARIES(neighbors
-	atombase
+	${ATOMSPACE_atombase_LIBRARY}
 	${COGUTIL_LIBRARY}
 )
 

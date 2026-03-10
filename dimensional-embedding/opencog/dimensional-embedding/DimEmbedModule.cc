@@ -58,32 +58,17 @@ DimEmbedModule::DimEmbedModule(CogServer& cs) : Module(cs)
     as = &_cogserver.getAtomSpace();
     _bank = &attentionbank(as);
 
-    addedAtomConnection = as->
-        atomAddedSignal().connect(std::bind(&DimEmbedModule::handleAddSignal, this, _1));
-    removedAtomConnection = as->
-        atomRemovedSignal().connect(std::bind(&DimEmbedModule::atomRemoveSignal, this, _1));
-    tvChangedConnection = as->
-        TVChangedSignal().connect(std::bind(&DimEmbedModule::TVChangedSignal, this, _1, _2, _3));
 }
 
 DimEmbedModule::~DimEmbedModule()
 {
     logger().info("[DimEmbedModule] destructor");
-    as->atomAddedSignal().disconnect(addedAtomConnection);
-    as->atomRemovedSignal().disconnect(removedAtomConnection);
-    as->TVChangedSignal().disconnect(tvChangedConnection);
 }
 
 void DimEmbedModule::init()
 {
     logger().info("[DimEmbedModule] init");
     this->as = &_cogserver.getAtomSpace();
-    addedAtomConnection = as->
-        atomAddedSignal().connect(std::bind(&DimEmbedModule::handleAddSignal, this, _1));
-    removedAtomConnection = as->
-        atomRemovedSignal().connect(std::bind(&DimEmbedModule::atomRemoveSignal, this, _1));
-    tvChangedConnection = as->
-        TVChangedSignal().connect(std::bind(&DimEmbedModule::TVChangedSignal, this, _1, _2, _3));
 #ifdef HAVE_GUILE
     //Functions available to scheme shell
     define_scheme_primitive("embedSpace",
