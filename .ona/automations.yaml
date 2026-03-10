@@ -1,0 +1,57 @@
+tasks:
+  install-deps:
+    name: Install system dependencies
+    description: Install C++/CMake build tools and Python packages required for OpenCog.
+    command: |
+      sudo apt-get update -qq && sudo apt-get install -y \
+        build-essential \
+        cmake \
+        cmake-data \
+        libboost-all-dev \
+        libcppunit-dev \
+        guile-3.0-dev \
+        libbz2-dev \
+        libexpat1-dev \
+        libgsl-dev \
+        libhyphen-dev \
+        libpthread-stubs0-dev \
+        libtool \
+        libzmq3-dev \
+        pkg-config \
+        python3-dev \
+        python3-pip \
+        python3-numpy \
+        python3-scipy \
+        cython3 \
+        python3-nose \
+        unzip \
+        wget \
+        curl \
+        locales \
+        locales-all
+      pip3 install --user numpy scipy matplotlib cython pytest networkx scikit-learn pandas
+    triggeredBy:
+      - postDevcontainerStart
+
+  setup-env:
+    name: Set up build environment
+    description: Configure environment variables and create build helper scripts.
+    command: |
+      chmod +x .gitpod/*.sh
+      chmod +x ./setup-opencog-gitpod.sh
+      bash .gitpod/setup.sh
+    triggeredBy:
+      - postDevcontainerStart
+    dependsOn:
+      - install-deps
+
+  build-opencog:
+    name: Build OpenCog
+    description: Build core OpenCog components (cogutil, atomspace, cogserver) in dependency order.
+    command: |
+      source ~/.bashrc
+      build-opencog
+    triggeredBy:
+      - manual
+    dependsOn:
+      - setup-env
