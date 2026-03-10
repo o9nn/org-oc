@@ -1,0 +1,562 @@
+# single-job-build.yml — All package builds in a single GH Actions job
+# Builds all 44 OpenCog packages sequentially in dependency tier order.
+# Each package is a separate step; installed libraries persist across steps.
+# Critical path: cogutil -> atomspace -> unify -> ure -> pln -> python-attic
+
+name: OC Single-Job Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  CMAKE_BUILD_TYPE: Release
+  INSTALL_PREFIX: /usr/local
+
+permissions:
+  contents: read
+
+jobs:
+  build-all:
+    name: Build All Packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf autoconf-archive automake binutils-dev cmake cxxtest \
+            cython3 flex guile-3.0-dev libboost-all-dev libiberty-dev \
+            libgtk-3-dev liboctomap-dev libopencv-dev libopenmpi-dev \
+            libpqxx-dev libprotobuf-dev librocksdb-dev libssl-dev libtool \
+            pkg-config protobuf-compiler swig unixodbc-dev uuid-dev
+          echo "/usr/local/lib/opencog" | sudo tee /etc/ld.so.conf.d/opencog.conf
+          sudo ldconfig
+
+      # =======================================================================
+      # Tier 0 — no OpenCog dependencies
+      # =======================================================================
+
+      - name: 'T0: Build cogutil'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/cogutil-build && cd /tmp/cogutil-build
+          cmake $GITHUB_WORKSPACE/cogutil \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T0: Build link-grammar'
+        continue-on-error: true
+        run: |
+          cd $GITHUB_WORKSPACE/link-grammar
+          ./autogen.sh --no-configure 2>&1 | tee /tmp/link-grammar-autogen.log || true
+          mkdir -p /tmp/link-grammar-build && cd /tmp/link-grammar-build
+          $GITHUB_WORKSPACE/link-grammar/configure \
+            --prefix=$INSTALL_PREFIX 2>&1 | tee configure.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      # =======================================================================
+      # Tier 1 — depends on cogutil (and/or no OpenCog deps)
+      # =======================================================================
+
+      - name: 'T1: Build atomspace'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/atomspace-build && cd /tmp/atomspace-build
+          cmake $GITHUB_WORKSPACE/atomspace \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T1: Build moses'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/moses-build && cd /tmp/moses-build
+          cmake $GITHUB_WORKSPACE/moses \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T1: Build profile'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/profile-build && cd /tmp/profile-build
+          cmake $GITHUB_WORKSPACE/profile \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T1: Build language-learning'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/language-learning-build && cd /tmp/language-learning-build
+          cmake $GITHUB_WORKSPACE/language-learning \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T1: Build external-tools'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/external-tools-build && cd /tmp/external-tools-build
+          cmake $GITHUB_WORKSPACE/external-tools \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T1: Build ocpkg'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/ocpkg-build && cd /tmp/ocpkg-build
+          cmake $GITHUB_WORKSPACE/ocpkg \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T1: Build relex'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/relex-build && cd /tmp/relex-build
+          cmake $GITHUB_WORKSPACE/relex \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T1: Build motor'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/motor-build && cd /tmp/motor-build
+          cmake $GITHUB_WORKSPACE/motor \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      # =======================================================================
+      # Tier 2 — depends on cogutil + atomspace
+      # Build atomspace-storage, unify, and spacetime first as later tiers
+      # depend on them.
+      # =======================================================================
+
+      - name: 'T2: Build atomspace-storage'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/atomspace-storage-build && cd /tmp/atomspace-storage-build
+          cmake $GITHUB_WORKSPACE/atomspace-storage \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build unify'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/unify-build && cd /tmp/unify-build
+          cmake $GITHUB_WORKSPACE/unify \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build spacetime'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/spacetime-build && cd /tmp/spacetime-build
+          cmake $GITHUB_WORKSPACE/spacetime \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build agi-bio'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/agi-bio-build && cd /tmp/agi-bio-build
+          cmake $GITHUB_WORKSPACE/agi-bio \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build atomspace-agents'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/atomspace-agents-build && cd /tmp/atomspace-agents-build
+          cmake $GITHUB_WORKSPACE/atomspace-agents \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build atomspace-rpc'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/atomspace-rpc-build && cd /tmp/atomspace-rpc-build
+          cmake $GITHUB_WORKSPACE/atomspace-rpc \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build cheminformatics'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/cheminformatics-build && cd /tmp/cheminformatics-build
+          cmake $GITHUB_WORKSPACE/cheminformatics \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build generate'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/generate-build && cd /tmp/generate-build
+          cmake $GITHUB_WORKSPACE/generate \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build matrix'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/matrix-build && cd /tmp/matrix-build
+          cmake $GITHUB_WORKSPACE/matrix \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build pattern-index'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/pattern-index-build && cd /tmp/pattern-index-build
+          cmake $GITHUB_WORKSPACE/pattern-index \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build sensory'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/sensory-build && cd /tmp/sensory-build
+          cmake $GITHUB_WORKSPACE/sensory \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build vision'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/vision-build && cd /tmp/vision-build
+          cmake $GITHUB_WORKSPACE/vision \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build benchmark'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/benchmark-build && cd /tmp/benchmark-build
+          cmake $GITHUB_WORKSPACE/benchmark \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build atomspace-ipfs'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/atomspace-ipfs-build && cd /tmp/atomspace-ipfs-build
+          cmake $GITHUB_WORKSPACE/atomspace-ipfs \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build atomspace-websockets'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/atomspace-websockets-build && cd /tmp/atomspace-websockets-build
+          cmake $GITHUB_WORKSPACE/atomspace-websockets \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build atomspace-metta'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/atomspace-metta-build && cd /tmp/atomspace-metta-build
+          cmake $GITHUB_WORKSPACE/atomspace-metta \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T2: Build atomspace-dht'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/atomspace-dht-build && cd /tmp/atomspace-dht-build
+          cmake $GITHUB_WORKSPACE/atomspace-dht \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      # =======================================================================
+      # Tier 3 — depends on T2 packages
+      # =======================================================================
+
+      - name: 'T3: Build atomspace-bridge'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/atomspace-bridge-build && cd /tmp/atomspace-bridge-build
+          cmake $GITHUB_WORKSPACE/atomspace-bridge \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T3: Build atomspace-pgres'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/atomspace-pgres-build && cd /tmp/atomspace-pgres-build
+          cmake $GITHUB_WORKSPACE/atomspace-pgres \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T3: Build atomspace-rocks'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/atomspace-rocks-build && cd /tmp/atomspace-rocks-build
+          cmake $GITHUB_WORKSPACE/atomspace-rocks \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T3: Build cogserver'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/cogserver-build && cd /tmp/cogserver-build
+          cmake $GITHUB_WORKSPACE/cogserver \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T3: Build lg-atomese'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/lg-atomese-build && cd /tmp/lg-atomese-build
+          cmake $GITHUB_WORKSPACE/lg-atomese \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T3: Build ure'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/ure-build && cd /tmp/ure-build
+          cmake $GITHUB_WORKSPACE/ure \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      # =======================================================================
+      # Tier 4 — depends on T3 packages
+      # =======================================================================
+
+      - name: 'T4: Build asmoses'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/asmoses-build && cd /tmp/asmoses-build
+          cmake $GITHUB_WORKSPACE/asmoses \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T4: Build atomspace-cog'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/atomspace-cog-build && cd /tmp/atomspace-cog-build
+          cmake $GITHUB_WORKSPACE/atomspace-cog \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T4: Build atomspace-restful'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/atomspace-restful-build && cd /tmp/atomspace-restful-build
+          cmake $GITHUB_WORKSPACE/atomspace-restful \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T4: Build attention'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/attention-build && cd /tmp/attention-build
+          cmake $GITHUB_WORKSPACE/attention \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T4: Build learn'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/learn-build && cd /tmp/learn-build
+          cmake $GITHUB_WORKSPACE/learn \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T4: Build miner'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/miner-build && cd /tmp/miner-build
+          cmake $GITHUB_WORKSPACE/miner \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T4: Build pln'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/pln-build && cd /tmp/pln-build
+          cmake $GITHUB_WORKSPACE/pln \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T4: Build visualization'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/visualization-build && cd /tmp/visualization-build
+          cmake $GITHUB_WORKSPACE/visualization \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      # =======================================================================
+      # Tier 5 — depends on T4 packages
+      # =======================================================================
+
+      - name: 'T5: Build python-attic'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/python-attic-build && cd /tmp/python-attic-build
+          cmake $GITHUB_WORKSPACE/python-attic \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T5: Build dimensional-embedding'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/dimensional-embedding-build && cd /tmp/dimensional-embedding-build
+          cmake $GITHUB_WORKSPACE/dimensional-embedding \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      - name: 'T5: Build opencog'
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/opencog-build && cd /tmp/opencog-build
+          cmake $GITHUB_WORKSPACE/opencog \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+          make -j$(nproc) 2>&1 | tee make.log
+          sudo make install 2>&1 | tee install.log
+          sudo ldconfig
+
+      # =======================================================================
+      # Upload all build logs
+      # =======================================================================
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: /tmp/**/*.log
+          retention-days: 7
