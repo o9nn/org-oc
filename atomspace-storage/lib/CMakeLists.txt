@@ -19,7 +19,6 @@ write_basic_package_version_file(
 # Install export targets
 INSTALL(EXPORT AtomSpaceStorageTargets
 	FILE AtomSpaceStorageTargets.cmake
-	NAMESPACE atomspace-storage::
 	DESTINATION ${ATOMSPACE_STORAGE_CMAKE_DIR})
 
 INSTALL(FILES
