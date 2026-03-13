@@ -34,13 +34,14 @@ namespace opencog {
 
 void TulipWriter::writeNodes()
 {
-    AtomSpace& a = server.getAtomSpace();
+    AtomSpacePtr asp = server.getAtomSpace();
+    AtomSpace& a = *asp;
 
     HandleSeq nodeHandles;
-    a.get_handles_by_type(back_inserter(nodeHandles), (Type) NODE, true );
+    a.get_handles_by_type(nodeHandles, (Type) NODE, true );
     // write nodes for links too (to represent hypergraph in Tulip)
     HandleSeq linkHandles;
-    a.get_handles_by_type(back_inserter(linkHandles), (Type) LINK, true );
+    a.get_handles_by_type(linkHandles, (Type) LINK, true );
 
     // Output Node numbers/ids
     myfile << "(nodes ";
@@ -65,12 +66,13 @@ void TulipWriter::writeHeader(const std::string &comment)
 
 void TulipWriter::writeCluster(Handle setLink)
 {
-    AtomSpace& a = server.getAtomSpace();
+    AtomSpacePtr asp = server.getAtomSpace();
+    AtomSpace& a = *asp;
 
     HandleSeq nodeHandles;
-    a.get_handles_by_type(back_inserter(nodeHandles), (Type) NODE, true );
+    a.get_handles_by_type(nodeHandles, (Type) NODE, true );
     HandleSeq linkHandles;
-    a.get_handles_by_type(back_inserter(linkHandles), (Type) LINK, true );
+    a.get_handles_by_type(linkHandles, (Type) LINK, true );
 
     // Output setLink as a cluster
     HandleSet inSet;
@@ -113,12 +115,13 @@ void TulipWriter::writeCluster(Handle setLink)
 
 void TulipWriter::writeEdges()
 {
-    AtomSpace& a = server.getAtomSpace();
+    AtomSpacePtr asp = server.getAtomSpace();
+    AtomSpace& a = *asp;
 
     HandleSeq nodeHandles;
-    a.get_handles_by_type(back_inserter(nodeHandles), (Type) NODE, true );
+    a.get_handles_by_type(nodeHandles, (Type) NODE, true );
     HandleSeq linkHandles;
-    a.get_handles_by_type(back_inserter(linkHandles), (Type) LINK, true );
+    a.get_handles_by_type(linkHandles, (Type) LINK, true );
 
     // Output Edge numbers/ids, source, and target
     for (Handle l : linkHandles) {
@@ -133,13 +136,14 @@ void TulipWriter::writeEdges()
 
 void TulipWriter::writeNodeNames()
 {
-    AtomSpace& a = server.getAtomSpace();
+    AtomSpacePtr asp = server.getAtomSpace();
+    AtomSpace& a = *asp;
 
     // Including type of link nodes
     HandleSeq nodeHandles;
-    a.get_handles_by_type(back_inserter(nodeHandles), (Type) NODE, true );
+    a.get_handles_by_type(nodeHandles, (Type) NODE, true );
     HandleSeq linkHandles;
-    a.get_handles_by_type(back_inserter(linkHandles), (Type) LINK, true );
+    a.get_handles_by_type(linkHandles, (Type) LINK, true );
 
     // Output node names
     myfile << "(property  0 string \"viewLabel\" " << endl;
@@ -169,10 +173,11 @@ void TulipWriter::writeDefaultColouring()
 
 void TulipWriter::writeTruthValue()
 {
-    AtomSpace& a = server.getAtomSpace();
+    AtomSpacePtr asp = server.getAtomSpace();
+    AtomSpace& a = *asp;
 
     HandleSeq handles;
-    a.get_handles_by_type(back_inserter(handles), (Type) ATOM, true );
+    a.get_handles_by_type(handles, (Type) ATOM, true );
 
     // Output strength component of truth value
     myfile << "(property  0 double \"strength\"" << endl;
@@ -184,9 +189,9 @@ void TulipWriter::writeTruthValue()
     myfile << ")" << endl;
 
     HandleSeq nodeHandles;
-    a.get_handles_by_type(back_inserter(nodeHandles), (Type) NODE, true );
+    a.get_handles_by_type(nodeHandles, (Type) NODE, true );
     HandleSeq linkHandles;
-    a.get_handles_by_type(back_inserter(nodeHandles), (Type) LINK, true );
+    a.get_handles_by_type(linkHandles, (Type) LINK, true );
 
     // Output distance metric as 1/strength 
     myfile << "(property  0 double \"distance\"" << endl;
@@ -213,12 +218,13 @@ void TulipWriter::writeTruthValue()
 
 void TulipWriter::writeShapes()
 {
-    AtomSpace& a = server.getAtomSpace();
+    AtomSpacePtr asp = server.getAtomSpace();
+    AtomSpace& a = *asp;
 
     HandleSeq nodeHandles;
-    a.get_handles_by_type(back_inserter(nodeHandles), (Type) NODE, true );
+    a.get_handles_by_type(nodeHandles, (Type) NODE, true );
     HandleSeq linkHandles;
-    a.get_handles_by_type(back_inserter(nodeHandles), (Type) LINK, true );
+    a.get_handles_by_type(linkHandles, (Type) LINK, true );
 
     // Output strength component of truth value
     myfile << "(property  0 int \"viewShape\"" << endl;

@@ -16,7 +16,6 @@
 #include <opencog/atoms/base/Node.h>
 #include <opencog/atoms/base/Link.h>
 #include <opencog/atoms/truthvalue/CountTruthValue.h>
-#include <opencog/atoms/truthvalue/IndefiniteTruthValue.h>
 #include <opencog/atoms/truthvalue/SimpleTruthValue.h>
 #include <opencog/atoms/truthvalue/TruthValue.h>
 #include <opencog/persist/tlb/TLB.h>
@@ -105,9 +104,6 @@ size_t AtomSpaceBenchmark::estimateOfAtomSize(Handle h)
         else
         if (tvt == COUNT_TRUTH_VALUE)
             total += sizeof(CountTruthValue);
-        else
-        if (tvt == INDEFINITE_TRUTH_VALUE)
-            total += sizeof(IndefiniteTruthValue);
     }
 
     NodePtr n(NodeCast(h));
@@ -159,7 +155,6 @@ void AtomSpaceBenchmark::printTypeSizes()
     cout << "Link = " << sizeof(Link) << endl;
     cout << "SimpleTruthValue = " << sizeof(SimpleTruthValue) << endl;
     cout << "CountTruthValue = " << sizeof(CountTruthValue) << endl;
-    cout << "IndefiniteTruthValue = " << sizeof(IndefiniteTruthValue) << endl;
     cout << "IncomingSet = " << sizeof(IncomingSet) << endl;
     cout << DIVIDER_LINE << endl;
 

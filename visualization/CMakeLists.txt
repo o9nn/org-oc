@@ -115,12 +115,21 @@ ELSE (GTK3_FOUND)
 	MESSAGE(STATUS "GTK missing: needed for the the gtk-visualizer.")
 ENDIF (GTK3_FOUND)
 
+# CogServer - needed for dotty and tulip modules
+FIND_PACKAGE(CogServer CONFIG)
+IF (COGSERVER_FOUND)
+	MESSAGE(STATUS "CogServer found.")
+ELSE (COGSERVER_FOUND)
+	MESSAGE(STATUS "CogServer was not found. Dotty and Tulip modules may not build.")
+ENDIF (COGSERVER_FOUND)
+
 # ===================================================================
 # Include configuration.
 
 # Set default include paths.
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR} ${Boost_INCLUDE_DIRS}
-	${COGUTIL_INCLUDE_DIR} ${ATOMSPACE_INCLUDE_DIR})
+	${COGUTIL_INCLUDE_DIR} ${ATOMSPACE_INCLUDE_DIR}
+	${COGSERVER_INCLUDE_DIR})
 
 # Macros that define how atom types get declared.
 IF (NOT DEFINED ATOMSPACE_DATA_DIR)

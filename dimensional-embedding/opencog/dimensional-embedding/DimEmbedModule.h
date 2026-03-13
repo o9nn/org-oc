@@ -66,6 +66,7 @@ namespace opencog
         typedef std::vector<std::pair<HandleSeq,std::vector<double> > >
             ClusterSeq; //the vector of doubles is the centroid of the cluster
         
+        AtomSpacePtr _asp;
         AtomSpace* as;
 
         AtomEmbedMap atomMaps;
@@ -151,6 +152,7 @@ namespace opencog
         DimEmbedModule(CogServer&);
         virtual ~DimEmbedModule();
         virtual void init();
+        virtual bool config(const char *) { return false; }
 
         /**
          * Returns a vector of doubles corresponding to the handle h's

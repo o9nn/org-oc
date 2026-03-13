@@ -7,7 +7,7 @@ find_library(BIOSCIENCE_LIB
 
 #Protobuff
 set(protobuf_MODULE_COMPATIBLE ON CACHE BOOL "")
-find_package(ProtoBuf REQUIRED)
+find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIR})
 message(STATUS "Using protobuf ${Protobuf_VERSION}")
 

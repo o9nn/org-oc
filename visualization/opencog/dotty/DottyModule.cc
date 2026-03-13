@@ -112,8 +112,7 @@ public:
         }
 
         if (withIncoming) {
-            HandleSeq hs;
-            h->getIncomingSet(back_inserter(hs));
+            IncomingSet hs = h->getIncomingSet();
             int i = 0;
             for (const Handle& h : hs) {
 	            ost << h.value() << "->" << h.value()
@@ -159,7 +158,8 @@ void DottyModule::init()
 
 std::string DottyModule::do_dotty(Request *dummy, std::list<std::string> args)
 {
-    AtomSpace *space = &_cogserver.getAtomSpace();
+    AtomSpacePtr asp = _cogserver.getAtomSpace();
+    AtomSpace *space = asp.get();
     DottyGrapher g(space);
     while (!args.empty()) {
         if (args.front() == "with-incoming")

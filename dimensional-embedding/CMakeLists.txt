@@ -117,12 +117,29 @@ ENDIF (NOT CXXTEST_FOUND)
 
 include(OpenCogFindGuile)
 
+# CogServer
+FIND_PACKAGE(CogServer CONFIG)
+IF (COGSERVER_FOUND)
+	MESSAGE(STATUS "CogServer found.")
+ELSE (COGSERVER_FOUND)
+	MESSAGE(STATUS "CogServer was not found.")
+ENDIF (COGSERVER_FOUND)
+
+# AttentionBank
+FIND_PACKAGE(AttentionBank CONFIG)
+IF (ATTENTIONBANK_FOUND)
+	MESSAGE(STATUS "AttentionBank found.")
+ELSE (ATTENTIONBANK_FOUND)
+	MESSAGE(STATUS "AttentionBank was not found.")
+ENDIF (ATTENTIONBANK_FOUND)
+
 # ===================================================================
 # Include configuration.
 
 # Set default include paths.
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR} ${Boost_INCLUDE_DIRS}
-	${COGUTIL_INCLUDE_DIR} ${ATOMSPACE_INCLUDE_DIR})
+	${COGUTIL_INCLUDE_DIR} ${ATOMSPACE_INCLUDE_DIR}
+	${COGSERVER_INCLUDE_DIR} ${ATTENTIONBANK_INCLUDE_DIR})
 
 # Macros that define how atom types get declared.
 IF (NOT DEFINED ATOMSPACE_DATA_DIR)

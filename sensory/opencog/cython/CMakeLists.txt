@@ -41,7 +41,7 @@ TARGET_LINK_LIBRARIES(sensory_cython
 	sensory-filedir
 	sensory-terminal
 	sensory
-	atomspace
+	${ATOMSPACE_LIBRARY}
 	${Python3_LIBRARIES}
 )
 

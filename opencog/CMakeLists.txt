@@ -185,6 +185,9 @@ ENDIF (VALGRIND_FOUND)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}
 	${COGUTIL_INCLUDE_DIR} ${ATOMSPACE_INCLUDE_DIR})
 
+# Add library search path for AtomSpace libraries installed in lib/opencog
+LINK_DIRECTORIES(${CMAKE_INSTALL_PREFIX}/lib/opencog)
+
 # Macros that define how atom types get declared.
 IF (NOT DEFINED ATOMSPACE_DATA_DIR)
 	SET (ATOMSPACE_DATA_DIR "${COGUTIL_DATA_DIR}")

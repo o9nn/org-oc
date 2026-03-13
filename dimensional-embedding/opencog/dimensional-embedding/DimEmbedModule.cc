@@ -55,7 +55,8 @@ DECLARE_MODULE(DimEmbedModule)
 DimEmbedModule::DimEmbedModule(CogServer& cs) : Module(cs)
 {
     logger().info("[DimEmbedModule] constructor");
-    as = &_cogserver.getAtomSpace();
+    _asp = _cogserver.getAtomSpace();
+    as = _asp.get();
     _bank = &attentionbank(as);
 
 }
@@ -68,7 +69,8 @@ DimEmbedModule::~DimEmbedModule()
 void DimEmbedModule::init()
 {
     logger().info("[DimEmbedModule] init");
-    this->as = &_cogserver.getAtomSpace();
+    this->_asp = _cogserver.getAtomSpace();
+    this->as = _asp.get();
 #ifdef HAVE_GUILE
     //Functions available to scheme shell
     define_scheme_primitive("embedSpace",
@@ -213,7 +215,7 @@ void DimEmbedModule::addPivot(Handle h, Type linkType, bool fanin)
     bool symmetric = nameserver().isA(linkType,UNORDERED_LINK);
     if (!fanin) _bank->inc_vlti(h); //We don't want pivot atoms to be forgotten...
     HandleSeq nodes;
-    as->get_handles_by_type(std::back_inserter(nodes), NODE, true);
+    as->get_handles_by_type(nodes, NODE, true);
 
     std::map<Handle, double> distMap;
 
@@ -252,8 +254,7 @@ void DimEmbedModule::addPivot(Handle h, Type linkType, bool fanin)
         pQueue.erase(--erase_it);
 
         if (distMap[u]==0) { break;}
-        HandleSeq newLinks;
-        u->getIncomingSet(back_inserter(newLinks));
+        HandleSeq newLinks = u->getIncomingSet();
         for (HandleSeq::iterator it=newLinks.begin(); it!=newLinks.end(); ++it){
             //ignore links that aren't a subtype of linkType
             if (!nameserver().isA((*it)->get_type(), linkType)) continue;
@@ -350,7 +351,7 @@ void DimEmbedModule::embedAtomSpace(Type linkType,
     dimensionMap[linkType]=numDimensions;
     //const HandleSeq& pivots = getPivots(linkType);
     HandleSeq nodes;//candidates for new pivots
-    as->get_handles_by_type(std::back_inserter(nodes), NODE, true);
+    as->get_handles_by_type(nodes, NODE, true);
     if (nodes.empty()) return;
     if (nodes.size() < (size_t) numDimensions) numDimensions = nodes.size();
 
@@ -363,7 +364,7 @@ void DimEmbedModule::embedAtomSpace(Type linkType,
         if (!symmetric && !fanin && (nodes.empty() || i==numDimensions-1)) {
             fanin=true;
             nodes.clear();
-            as->get_handles_by_type(std::back_inserter(nodes), NODE, true);
+            as->get_handles_by_type(nodes, NODE, true);
             i=-1;
         }
 

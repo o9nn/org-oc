@@ -60,6 +60,7 @@ public:
     DottyModule(CogServer&);
     virtual ~DottyModule();
     virtual void init();
+    virtual bool config(const char *) { return false; }
 
 }; // class
 

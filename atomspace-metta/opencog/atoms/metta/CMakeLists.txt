@@ -16,7 +16,7 @@ ADD_DEPENDENCIES(metta-ast metta_atom_types)
 TARGET_LINK_LIBRARIES(metta-ast
 	metta-types
 	metta-io
-	atomspace
+	${ATOMSPACE_LIBRARY}
 )
 
 INSTALL (TARGETS metta-ast EXPORT AtomSpaceTargets

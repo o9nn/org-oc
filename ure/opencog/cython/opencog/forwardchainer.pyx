@@ -44,7 +44,7 @@ cdef class ForwardChainer:
 
     def get_results(self):
         cdef cHandle res_handle = self.chainer.get_results()
-        cdef Atom result = Atom(res_handle)
+        cdef Atom result = Atom.createAtom(res_handle)
         return result
 
     def __dealloc__(self):

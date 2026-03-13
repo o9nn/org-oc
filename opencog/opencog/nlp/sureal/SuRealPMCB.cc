@@ -186,8 +186,7 @@ bool SuRealPMCB::clause_match(const Handle &pattrn_link_h, const Handle &grnd_li
         pattrn_link_h->to_short_string().c_str(),
             grnd_link_h->to_short_string().c_str());
 
-    HandleSeq qISet;
-    grnd_link_h->getIncomingSetByType(back_inserter(qISet), SET_LINK);
+    HandleSeq qISet = grnd_link_h->getIncomingSetByType(SET_LINK);
 
     // Store the InterpretationNodes, will be needed if this grounding
     // is accepted.
@@ -333,8 +332,7 @@ bool SuRealPMCB::propose_grounding(const HandleMap &var_soln, const HandleMap &p
     // helper to get the InterpretationNode
     auto getInterpretation = [&](const Handle& h)
     {
-        HandleSeq qISet;
-        h->getIncomingSetByType(back_inserter(qISet), SET_LINK);
+        HandleSeq qISet = h->getIncomingSetByType(SET_LINK);
 
         HandleSeq results;
         for (auto& hSetLink : qISet)
