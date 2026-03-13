@@ -34,7 +34,9 @@ jobs:
             cython3 flex guile-3.0-dev libboost-all-dev libiberty-dev \
             libgtk-3-dev liboctomap-dev libopencv-dev libopenmpi-dev \
             libpqxx-dev libprotobuf-dev librocksdb-dev libssl-dev libtool \
-            pkg-config protobuf-compiler swig unixodbc-dev uuid-dev
+            pkg-config protobuf-compiler swig unixodbc-dev uuid-dev \
+            nlohmann-json3-dev libgrpc++-dev protobuf-compiler-grpc \
+            libopendht-dev libipfs-http-client-dev || true
           echo "/usr/local/lib/opencog" | sudo tee /etc/ld.so.conf.d/opencog.conf
           sudo ldconfig
 
