@@ -15,6 +15,12 @@ on:
 env:
   CMAKE_BUILD_TYPE: Release
   INSTALL_PREFIX: /usr/local
+  CMAKE_EXTRA_FLAGS: >-
+    -DBOOST_ROOT=/usr
+    -DBOOST_INCLUDEDIR=/usr/include
+    -DBoost_NO_SYSTEM_PATHS=ON
+    -DCMAKE_MODULE_PATH=/usr/local/lib/cmake
+    -DCMAKE_VERBOSE_MAKEFILE=ON
 
 permissions:
   contents: read
@@ -50,7 +56,8 @@ jobs:
           mkdir -p /tmp/cogutil-build && cd /tmp/cogutil-build
           cmake $GITHUB_WORKSPACE/cogutil \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -77,7 +84,8 @@ jobs:
           mkdir -p /tmp/atomspace-build && cd /tmp/atomspace-build
           cmake $GITHUB_WORKSPACE/atomspace \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -88,7 +96,8 @@ jobs:
           mkdir -p /tmp/moses-build && cd /tmp/moses-build
           cmake $GITHUB_WORKSPACE/moses \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -99,7 +108,8 @@ jobs:
           mkdir -p /tmp/profile-build && cd /tmp/profile-build
           cmake $GITHUB_WORKSPACE/profile \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -110,7 +120,8 @@ jobs:
           mkdir -p /tmp/language-learning-build && cd /tmp/language-learning-build
           cmake $GITHUB_WORKSPACE/language-learning \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -121,7 +132,8 @@ jobs:
           mkdir -p /tmp/external-tools-build && cd /tmp/external-tools-build
           cmake $GITHUB_WORKSPACE/external-tools \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -132,7 +144,8 @@ jobs:
           mkdir -p /tmp/ocpkg-build && cd /tmp/ocpkg-build
           cmake $GITHUB_WORKSPACE/ocpkg \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -143,7 +156,8 @@ jobs:
           mkdir -p /tmp/relex-build && cd /tmp/relex-build
           cmake $GITHUB_WORKSPACE/relex \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -154,7 +168,8 @@ jobs:
           mkdir -p /tmp/motor-build && cd /tmp/motor-build
           cmake $GITHUB_WORKSPACE/motor \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -171,7 +186,8 @@ jobs:
           mkdir -p /tmp/atomspace-storage-build && cd /tmp/atomspace-storage-build
           cmake $GITHUB_WORKSPACE/atomspace-storage \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -182,7 +198,8 @@ jobs:
           mkdir -p /tmp/unify-build && cd /tmp/unify-build
           cmake $GITHUB_WORKSPACE/unify \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -193,7 +210,8 @@ jobs:
           mkdir -p /tmp/spacetime-build && cd /tmp/spacetime-build
           cmake $GITHUB_WORKSPACE/spacetime \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -204,7 +222,8 @@ jobs:
           mkdir -p /tmp/agi-bio-build && cd /tmp/agi-bio-build
           cmake $GITHUB_WORKSPACE/agi-bio \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -215,7 +234,8 @@ jobs:
           mkdir -p /tmp/atomspace-agents-build && cd /tmp/atomspace-agents-build
           cmake $GITHUB_WORKSPACE/atomspace-agents \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -226,7 +246,8 @@ jobs:
           mkdir -p /tmp/atomspace-rpc-build && cd /tmp/atomspace-rpc-build
           cmake $GITHUB_WORKSPACE/atomspace-rpc \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -237,7 +258,8 @@ jobs:
           mkdir -p /tmp/cheminformatics-build && cd /tmp/cheminformatics-build
           cmake $GITHUB_WORKSPACE/cheminformatics \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -248,7 +270,8 @@ jobs:
           mkdir -p /tmp/generate-build && cd /tmp/generate-build
           cmake $GITHUB_WORKSPACE/generate \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -259,7 +282,8 @@ jobs:
           mkdir -p /tmp/matrix-build && cd /tmp/matrix-build
           cmake $GITHUB_WORKSPACE/matrix \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -270,7 +294,8 @@ jobs:
           mkdir -p /tmp/pattern-index-build && cd /tmp/pattern-index-build
           cmake $GITHUB_WORKSPACE/pattern-index \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -281,7 +306,8 @@ jobs:
           mkdir -p /tmp/sensory-build && cd /tmp/sensory-build
           cmake $GITHUB_WORKSPACE/sensory \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -292,7 +318,8 @@ jobs:
           mkdir -p /tmp/vision-build && cd /tmp/vision-build
           cmake $GITHUB_WORKSPACE/vision \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -303,7 +330,8 @@ jobs:
           mkdir -p /tmp/benchmark-build && cd /tmp/benchmark-build
           cmake $GITHUB_WORKSPACE/benchmark \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -314,7 +342,8 @@ jobs:
           mkdir -p /tmp/atomspace-ipfs-build && cd /tmp/atomspace-ipfs-build
           cmake $GITHUB_WORKSPACE/atomspace-ipfs \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -325,7 +354,8 @@ jobs:
           mkdir -p /tmp/atomspace-websockets-build && cd /tmp/atomspace-websockets-build
           cmake $GITHUB_WORKSPACE/atomspace-websockets \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -336,7 +366,8 @@ jobs:
           mkdir -p /tmp/atomspace-metta-build && cd /tmp/atomspace-metta-build
           cmake $GITHUB_WORKSPACE/atomspace-metta \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -347,7 +378,8 @@ jobs:
           mkdir -p /tmp/atomspace-dht-build && cd /tmp/atomspace-dht-build
           cmake $GITHUB_WORKSPACE/atomspace-dht \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -362,7 +394,8 @@ jobs:
           mkdir -p /tmp/atomspace-bridge-build && cd /tmp/atomspace-bridge-build
           cmake $GITHUB_WORKSPACE/atomspace-bridge \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -373,7 +406,8 @@ jobs:
           mkdir -p /tmp/atomspace-pgres-build && cd /tmp/atomspace-pgres-build
           cmake $GITHUB_WORKSPACE/atomspace-pgres \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -384,7 +418,8 @@ jobs:
           mkdir -p /tmp/atomspace-rocks-build && cd /tmp/atomspace-rocks-build
           cmake $GITHUB_WORKSPACE/atomspace-rocks \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -395,7 +430,8 @@ jobs:
           mkdir -p /tmp/cogserver-build && cd /tmp/cogserver-build
           cmake $GITHUB_WORKSPACE/cogserver \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -406,7 +442,8 @@ jobs:
           mkdir -p /tmp/lg-atomese-build && cd /tmp/lg-atomese-build
           cmake $GITHUB_WORKSPACE/lg-atomese \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -417,7 +454,8 @@ jobs:
           mkdir -p /tmp/ure-build && cd /tmp/ure-build
           cmake $GITHUB_WORKSPACE/ure \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -432,7 +470,8 @@ jobs:
           mkdir -p /tmp/asmoses-build && cd /tmp/asmoses-build
           cmake $GITHUB_WORKSPACE/asmoses \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -443,7 +482,8 @@ jobs:
           mkdir -p /tmp/atomspace-cog-build && cd /tmp/atomspace-cog-build
           cmake $GITHUB_WORKSPACE/atomspace-cog \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -454,7 +494,8 @@ jobs:
           mkdir -p /tmp/atomspace-restful-build && cd /tmp/atomspace-restful-build
           cmake $GITHUB_WORKSPACE/atomspace-restful \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -465,7 +506,8 @@ jobs:
           mkdir -p /tmp/attention-build && cd /tmp/attention-build
           cmake $GITHUB_WORKSPACE/attention \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -476,7 +518,8 @@ jobs:
           mkdir -p /tmp/learn-build && cd /tmp/learn-build
           cmake $GITHUB_WORKSPACE/learn \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -487,7 +530,8 @@ jobs:
           mkdir -p /tmp/miner-build && cd /tmp/miner-build
           cmake $GITHUB_WORKSPACE/miner \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -498,7 +542,8 @@ jobs:
           mkdir -p /tmp/pln-build && cd /tmp/pln-build
           cmake $GITHUB_WORKSPACE/pln \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -509,7 +554,8 @@ jobs:
           mkdir -p /tmp/visualization-build && cd /tmp/visualization-build
           cmake $GITHUB_WORKSPACE/visualization \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -524,7 +570,8 @@ jobs:
           mkdir -p /tmp/python-attic-build && cd /tmp/python-attic-build
           cmake $GITHUB_WORKSPACE/python-attic \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -535,7 +582,8 @@ jobs:
           mkdir -p /tmp/dimensional-embedding-build && cd /tmp/dimensional-embedding-build
           cmake $GITHUB_WORKSPACE/dimensional-embedding \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
@@ -546,7 +594,8 @@ jobs:
           mkdir -p /tmp/opencog-build && cd /tmp/opencog-build
           cmake $GITHUB_WORKSPACE/opencog \
             -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
-            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE 2>&1 | tee cmake.log
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+            $CMAKE_EXTRA_FLAGS 2>&1 | tee cmake.log
           make -j$(nproc) 2>&1 | tee make.log
           sudo make install 2>&1 | tee install.log
           sudo ldconfig
