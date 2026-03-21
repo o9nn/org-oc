@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # build-opencog.sh — Build and install all 44 OpenCog packages from the
-# workspace sources in dependency-tier order, mirroring optimal-build.yml.
+# workspace sources in dependency-tier order, mirroring unified-build.yml.
 #
 # Critical path: cogutil -> atomspace -> unify -> ure -> pln -> python-attic
 # Tiers: T0(2) → T1(8) → T2(17) → T3(6) → T4(8) → T5(3)  = 44 packages
@@ -22,7 +22,7 @@ CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}"
 NPROC=$(nproc 2>/dev/null || echo 2)
 BUILD_LOG_DIR="${BUILD_LOG_DIR:-/tmp/opencog-build-logs}"
 
-# CMake flags — keep in sync with optimal-build.yml
+# CMake flags — keep in sync with unified-build.yml
 # Note: avoid Boost_NO_SYSTEM_PATHS/BOOST_ROOT overrides; they prevent cmake
 # from finding Boost libraries in the Ubuntu multiarch path
 # (/usr/lib/x86_64-linux-gnu/) and break packages that detect Boost before
@@ -158,7 +158,7 @@ try_build_cmake()      { build_cmake      "$@" || true; }
 try_build_autotools()  { build_autotools  "$@" || true; }
 
 # ---------------------------------------------------------------------------
-# Main build sequence — tiers mirror optimal-build.yml
+# Main build sequence — tiers mirror unified-build.yml
 # ---------------------------------------------------------------------------
 log "OpenCog devcontainer build starting"
 log "Workspace : ${WORKSPACE}"

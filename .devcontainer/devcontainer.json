@@ -10,7 +10,7 @@
 
   // After the container is first created (workspace sources are mounted),
   // build and install all OpenCog packages in dependency-tier order.
-  // This mirrors the optimal-build.yml critical path:
+  // This mirrors the unified-build.yml critical path:
   //   cogutil -> atomspace -> unify -> ure -> pln -> python-attic
   "onCreateCommand": "bash ${containerWorkspaceFolder}/.devcontainer/build-opencog.sh ${containerWorkspaceFolder}",
 
