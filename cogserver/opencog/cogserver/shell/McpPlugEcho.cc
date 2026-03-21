@@ -88,11 +88,11 @@ std::string McpPlugEcho::invoke_tool(const std::string& tool_name,
             };
         } else if (tool_name == "time") {
             auto now = std::chrono::system_clock::now();
-            auto time_t = std::chrono::system_clock::to_time_t(now);
+            std::time_t now_time_t = std::chrono::system_clock::to_time_t(now);
             response["content"] = {
                 {
                     {"type", "text"},
-                    {"text", std::ctime(&time_t)}
+                    {"text", std::ctime(&now_time_t)}
                 }
             };
         } else {

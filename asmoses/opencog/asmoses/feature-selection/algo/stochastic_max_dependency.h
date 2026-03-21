@@ -28,6 +28,9 @@
 
 #include <functional>
 
+// std::random_shuffle was removed in C++17; use boost::range::random_shuffle
+#include <boost/range/algorithm/random_shuffle.hpp>
+
 #include <opencog/util/numeric.h>
 #include <opencog/util/lru_cache.h>
 #include <opencog/util/algorithm.h>
@@ -122,7 +125,7 @@ feature_set_pop stochastic_max_dependency_selection(const feature_set& features,
     //
     std::vector<feature_id> shuffle(features.begin(), features.end());
     auto shr = [&](ptrdiff_t i) { return randGen().randint(i); };
-    random_shuffle(shuffle.begin(), shuffle.end(), shr);
+    boost::range::random_shuffle(shuffle, shr);
 
     ranks_t ranks;
     

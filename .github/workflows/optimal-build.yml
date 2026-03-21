@@ -21,6 +21,12 @@ env:
   CMAKE_BUILD_TYPE: Release
   INSTALL_PREFIX: /usr/local
 
+# Ensure pipefail is active for all run steps so that piping build output
+# through 'tee' does not hide non-zero exit codes from cmake/make.
+defaults:
+  run:
+    shell: bash -eo pipefail {0}
+
 permissions:
   contents: read
 

@@ -19,7 +19,7 @@ IF(CMAKE_VERSION VERSION_GREATER 3.0.2)
 	CMAKE_POLICY(SET CMP0037 OLD)
 ENDIF(CMAKE_VERSION VERSION_GREATER 3.0.2)
 
-PROJECT(pattern-index)
+PROJECT(visualization)
 
 # ----------------------------------------------------------
 # User-modifiable options. Feel free to change these!
