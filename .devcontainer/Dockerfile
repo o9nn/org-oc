@@ -1,7 +1,7 @@
 # OpenCog Devcontainer Dockerfile
 # Provides a development environment where all OpenCog packages can be
 # pre-built from the workspace sources via the build-opencog.sh script.
-# Based on optimal-build.yml: 44 packages across 6 dependency tiers.
+# Based on unified-build.yml: 44 packages across 6 dependency tiers.
 # Critical path: cogutil -> atomspace -> unify -> ure -> pln -> python-attic
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
@@ -9,7 +9,7 @@ FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install all system dependencies required by the 44 OpenCog packages.
-# Sourced from the system_setup and per-package dep lists in optimal-build.yml
+# Sourced from the system_setup and per-package dep lists in unified-build.yml
 # and single-job-build.yml.  Packages that may not exist in the Ubuntu 24.04
 # archive are installed with `|| true` so the image build never fails.
 RUN apt-get update && apt-get install -y \
