@@ -1,10 +1,30 @@
 {
   "name": "OpenCog",
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
-  "features": {
-    "ghcr.io/devcontainers/features/python": {},
-    "ghcr.io/devcontainers/features/node": {}
+
+  // Build the devcontainer image from the local Dockerfile, which installs
+  // all system-level dependencies for the 44 OpenCog packages.
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
   },
+
+  // After the container is first created (workspace sources are mounted),
+  // build and install all OpenCog packages in dependency-tier order.
+  // This mirrors the optimal-build.yml critical path:
+  //   cogutil -> atomspace -> unify -> ure -> pln -> python-attic
+  "onCreateCommand": "bash ${containerWorkspaceFolder}/.devcontainer/build-opencog.sh ${containerWorkspaceFolder}",
+
+  // Make installed OpenCog libraries and Python/Guile modules discoverable.
+  "remoteEnv": {
+    "INSTALL_PREFIX": "/usr/local",
+    "CMAKE_BUILD_TYPE": "Release",
+    "OPENCOG_SOURCE_DIR": "${containerWorkspaceFolder}",
+    "PKG_CONFIG_PATH": "/usr/local/lib/pkgconfig",
+    "CMAKE_PREFIX_PATH": "/usr/local",
+    "GUILE_LOAD_PATH": "/usr/local/share/guile/site/3.0:/usr/local/share/opencog"
+  },
+
+  // Forward the standard OpenCog service ports.
   "forwardPorts": [17001, 18001, 5000, 8080],
   "portsAttributes": {
     "17001": {
@@ -24,13 +44,30 @@
       "onAutoForward": "notify"
     }
   },
+
   "customizations": {
     "vscode": {
       "extensions": [
+        // C/C++ development
         "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack",
         "ms-vscode.cmake-tools",
-        "ms-python.python"
-      ]
+        // Python development
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        // Scheme/Guile
+        "release.scheme",
+        // General utilities
+        "streetsidesoftware.code-spell-checker",
+        "mhutchie.git-graph"
+      ],
+      "settings": {
+        "cmake.configureOnOpen": false,
+        "C_Cpp.default.includePath": [
+          "/usr/local/include",
+          "/usr/include"
+        ]
+      }
     }
   }
 }
