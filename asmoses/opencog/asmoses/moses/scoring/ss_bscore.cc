@@ -25,6 +25,7 @@
 #include "ss_bscore.h"
 
 #include <boost/range/irange.hpp>
+#include <boost/range/algorithm/random_shuffle.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/count.hpp>
@@ -94,7 +95,7 @@ behavioral_score ss_bscore::operator()(const combo_tree& tr) const {
 
         // Randomly shuffle the order
         auto shr = [&](ptrdiff_t i) { return randGen().randint(i); };
-        random_shuffle(row_idxs.begin(), row_idxs.end(), shr);
+        boost::range::random_shuffle(row_idxs, shr);
 
         // Divide the vector into n_ss_demes equal parts
         unsigned seg_size = usize / _n_subsamples;

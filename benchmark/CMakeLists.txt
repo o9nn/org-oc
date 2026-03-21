@@ -50,6 +50,15 @@ ELSE (ATOMSPACE_FOUND)
 	MESSAGE(FATAL_ERROR "AtomSpace missing: it is needed for everything!")
 ENDIF (ATOMSPACE_FOUND)
 
+# AtomSpaceStorage provides the TLB (Transaction Log Buffer) library
+# used by the atomspace benchmark.
+FIND_PACKAGE(AtomSpaceStorage CONFIG)
+IF (ATOMSPACE_STORAGE_FOUND)
+	MESSAGE(STATUS "AtomSpaceStorage found.")
+ELSE (ATOMSPACE_STORAGE_FOUND)
+	MESSAGE(STATUS "AtomSpaceStorage not found; TLB-based benchmarks will be skipped.")
+ENDIF (ATOMSPACE_STORAGE_FOUND)
+
 ## URE (optional)
 #FIND_PACKAGE(URE 1.0.0 CONFIG)
 #IF (URE_FOUND)

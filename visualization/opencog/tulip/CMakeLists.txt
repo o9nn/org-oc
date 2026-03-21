@@ -3,9 +3,12 @@ ADD_LIBRARY(adaptor-tulip STATIC
 )
 
 INCLUDE_DIRECTORIES(
-    ${PROJECT_SOURCE_DIR}/opencog/util
-    ${PROJECT_SOURCE_DIR}/opencog/atomspace
-    ${PROJECT_SOURCE_DIR}/opencog/cogserver/server
+    ${ATOMSPACE_INCLUDE_DIR}
+    ${COGSERVER_INCLUDE_DIR}
+    ${COGUTIL_INCLUDE_DIR}
 )
 
-TARGET_LINK_LIBRARIES(adaptor-tulip server)
+TARGET_LINK_LIBRARIES(adaptor-tulip
+    ${COGSERVER_LIBRARIES}
+    ${COGUTIL_LIBRARY}
+)

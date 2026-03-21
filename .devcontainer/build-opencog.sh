@@ -22,14 +22,14 @@ CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}"
 NPROC=$(nproc 2>/dev/null || echo 2)
 BUILD_LOG_DIR="${BUILD_LOG_DIR:-/tmp/opencog-build-logs}"
 
-# CMake flags that mirror single-job-build.yml
+# CMake flags — keep in sync with optimal-build.yml
+# Note: avoid Boost_NO_SYSTEM_PATHS/BOOST_ROOT overrides; they prevent cmake
+# from finding Boost libraries in the Ubuntu multiarch path
+# (/usr/lib/x86_64-linux-gnu/) and break packages that detect Boost before
+# loading cogutil's cmake modules (e.g. atomspace-rpc, atomspace-websockets).
 CMAKE_EXTRA_FLAGS=(
     "-DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}"
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-    "-DBOOST_ROOT=/usr"
-    "-DBOOST_INCLUDEDIR=/usr/include"
-    "-DBoost_NO_SYSTEM_PATHS=ON"
-    "-DCMAKE_MODULE_PATH=${INSTALL_PREFIX}/lib/cmake"
 )
 
 # ---------------------------------------------------------------------------
@@ -83,9 +83,12 @@ build_cmake() {
     fi
 
     # install (needs write access to INSTALL_PREFIX)
-    if ! sudo make -C "${bld}" install \
+    # Use "cmake --install" instead of "make install" so that packages with
+    # no install() rules (stub/placeholder CMakeLists.txt) succeed silently
+    # instead of failing with "No rule to make target 'install'".
+    if ! sudo cmake --install "${bld}" \
             > "${log_base}-install.log" 2>&1; then
-        fail "${pkg}: make install failed (see ${log_base}-install.log)"
+        fail "${pkg}: cmake --install failed (see ${log_base}-install.log)"
         FAILED+=("${pkg}")
         return 1
     fi
