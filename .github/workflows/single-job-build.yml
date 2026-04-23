@@ -42,7 +42,7 @@ jobs:
             libpqxx-dev libprotobuf-dev librocksdb-dev libssl-dev libtool \
             pkg-config protobuf-compiler swig unixodbc-dev uuid-dev \
             nlohmann-json3-dev libgrpc++-dev protobuf-compiler-grpc \
-            libopendht-dev libipfs-http-client-dev || true
+            libopendht-dev || true
           echo "/usr/local/lib/opencog" | sudo tee /etc/ld.so.conf.d/opencog.conf
           sudo ldconfig
 
