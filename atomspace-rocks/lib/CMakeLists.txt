@@ -3,7 +3,7 @@ set(INCLUDE_INSTALL_DIR include/)
 set(LIB_INSTALL_DIR lib/)
 set(ATOMSPACE_ROCKS_CMAKE_DIR lib/cmake/AtomSpaceRocks)
 include(CMakePackageConfigHelpers)
-configure_package_config_file(AtomSpaceRocksConfig.cmake.in
+configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/AtomSpaceRocksConfig.cmake.in
 	${CMAKE_CURRENT_BINARY_DIR}/AtomSpaceRocksConfig.cmake
 	INSTALL_DESTINATION ATOMSPACE_ROCKS_CMAKE_DIR
 	PATH_VARS INCLUDE_INSTALL_DIR LIB_INSTALL_DIR)
