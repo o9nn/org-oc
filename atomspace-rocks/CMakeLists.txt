@@ -220,7 +220,8 @@ FILE(WRITE "${PROJECT_BINARY_DIR}/install_manifest.txt")
 ## It doesn't have a header-file declaring the version similar to cogutil and
 ## atomspace.
 # SEMANTIC_VERSION is set in `lib/AtomSpaceRocksConfig.cmake.in`
-# SET(SEMANTIC_VERSION 1.3.0)
+SET(SEMANTIC_VERSION 1.3.0)
+ADD_SUBDIRECTORY(lib)
 
 ## Cpack configuration
 SET(CPACK_GENERATOR "DEB")
