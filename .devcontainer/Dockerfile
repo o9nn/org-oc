@@ -68,5 +68,8 @@ RUN echo "/usr/local/lib/opencog" > /etc/ld.so.conf.d/opencog.conf \
 COPY . /workspace/org-oc
 
 RUN bash /workspace/org-oc/.devcontainer/build-opencog.sh /workspace/org-oc \
+    # Remove intermediate build trees created by build-opencog.sh.
+    # /tmp/oc-build  — per-package cmake build dirs (BUILD_LOG_DIR default)
+    # /tmp/opencog-build-logs — build logs written by build-opencog.sh
     && rm -rf /tmp/oc-build /tmp/opencog-build-logs \
     && rm -rf /workspace/org-oc

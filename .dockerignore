@@ -1,0 +1,50 @@
+# .dockerignore — keep the Docker build context lean.
+# Only the OpenCog source packages and .devcontainer scripts need to be copied
+# into the image; everything else is excluded to reduce context transfer time.
+
+# Version control
+.git
+.gitignore
+.gitmodules
+
+# Editor / IDE metadata
+.vscode
+.idea
+*.swp
+*~
+
+# Documentation and website files
+docs
+*.md
+opencog.org
+rest-api-documentation
+link-grammar-website
+
+# CI artefacts and disabled workflows
+ci_artifacts
+.github/workflows-disabled
+
+# Gitpod configuration (not needed inside Docker)
+.gitpod
+.gitpod.yml
+.gitpod.Dockerfile
+setup-opencog-gitpod.sh
+fix-cogserver-scripts.sh
+
+# Node / frontend
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Python artefacts
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+dist
+build
+
+# CMake / make artefacts that might exist in a dirty checkout
+CMakeCache.txt
+CMakeFiles
+Makefile.in
