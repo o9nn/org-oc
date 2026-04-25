@@ -1,8 +1,13 @@
-# OpenCog Devcontainer Dockerfile
-# Provides a development environment where all OpenCog packages can be
-# pre-built from the workspace sources via the build-opencog.sh script.
-# Based on unified-build.yml: 44 packages across 6 dependency tiers.
+# OpenCog Devcontainer / GHCR image Dockerfile
+# Installs all system dependencies and bakes the full OpenCog build (44
+# packages, 6 dependency tiers) into the image layer so that devcontainer
+# and Gitpod workspaces start instantly without a compile step.
 # Critical path: cogutil -> atomspace -> unify -> ure -> pln -> python-attic
+#
+# Build locally:
+#   docker build -f .devcontainer/Dockerfile -t ghcr.io/o9nn/org-oc:latest .
+# This image is also published automatically to GHCR by
+# .github/workflows/publish-image.yml on every push to main.
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
@@ -53,3 +58,15 @@ RUN apt-get update && apt-get install -y \
 # under /usr/local/lib/opencog are found automatically.
 RUN echo "/usr/local/lib/opencog" > /etc/ld.so.conf.d/opencog.conf \
     && ldconfig
+
+# ---------------------------------------------------------------------------
+# Bake the full OpenCog build into the image.
+# COPY the entire repo, run the tier-ordered build script, then discard the
+# intermediate build trees and sources to keep the final image lean.
+# The installed headers/libs/binaries under /usr/local are kept.
+# ---------------------------------------------------------------------------
+COPY . /workspace/org-oc
+
+RUN bash /workspace/org-oc/.devcontainer/build-opencog.sh /workspace/org-oc \
+    && rm -rf /tmp/oc-build /tmp/opencog-build-logs \
+    && rm -rf /workspace/org-oc

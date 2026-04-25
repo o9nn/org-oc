@@ -1,0 +1,85 @@
+# publish-image.yml — Build the devcontainer/GHCR image and push it to the
+# GitHub Container Registry (ghcr.io/o9nn/org-oc) on every push to main.
+#
+# The image bakes all 44 OpenCog packages into a single layer so that
+# devcontainer and Gitpod workspaces open instantly.
+#
+# Image tags produced:
+#   ghcr.io/o9nn/org-oc:latest  — always the most recent main-branch build
+#   ghcr.io/o9nn/org-oc:<sha>   — immutable per-commit tag
+
+name: Publish GHCR Image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Rebuild when anything that affects the image changes
+      - '.devcontainer/**'
+      - '**/*.cmake'
+      - '**/CMakeLists.txt'
+      - '**/*.cpp'
+      - '**/*.h'
+      - '**/*.cc'
+      - '**/*.scm'
+      - '**/*.py'
+  workflow_dispatch:
+    inputs:
+      push:
+        description: 'Push image to GHCR (true/false)'
+        required: false
+        default: 'true'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    name: Build & push OpenCog image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (multi-arch support)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata (tags & labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            # floating "latest" tag on every main-branch push
+            type=raw,value=latest,enable={{is_default_branch}}
+            # immutable per-commit SHA tag
+            type=sha,prefix=,format=short
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: .devcontainer/Dockerfile
+          # Push when triggered by a push to main; skip push on PR/fork runs
+          push: ${{ github.event_name == 'push' || github.event.inputs.push == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Use GitHub Actions cache to speed up layer rebuilds
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
