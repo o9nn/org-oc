@@ -609,5 +609,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-logs
-          path: /tmp/**/*.log
+          path: |
+            /tmp/*-build/*.log
+            /tmp/*.log
           retention-days: 7
