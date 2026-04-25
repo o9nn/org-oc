@@ -1,18 +1,15 @@
 {
   "name": "OpenCog",
 
-  // Build the devcontainer image from the local Dockerfile, which installs
-  // all system-level dependencies for the 44 OpenCog packages.
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": ".."
-  },
-
-  // After the container is first created (workspace sources are mounted),
-  // build and install all OpenCog packages in dependency-tier order.
-  // This mirrors the unified-build.yml critical path:
-  //   cogutil -> atomspace -> unify -> ure -> pln -> python-attic
-  "onCreateCommand": "bash ${containerWorkspaceFolder}/.devcontainer/build-opencog.sh ${containerWorkspaceFolder}",
+  // Use the pre-built image published to GHCR by publish-image.yml.
+  // All 44 OpenCog packages are already compiled and installed under
+  // /usr/local, so the workspace opens instantly without a compile step.
+  //
+  // To build the image locally instead:
+  //   docker build -f .devcontainer/Dockerfile -t ghcr.io/o9nn/org-oc:latest .
+  // then change "image" below to point at your local tag, or restore
+  // the "build" section and uncomment "onCreateCommand".
+  "image": "ghcr.io/o9nn/org-oc:latest",
 
   // Make installed OpenCog libraries and Python/Guile modules discoverable.
   "remoteEnv": {
