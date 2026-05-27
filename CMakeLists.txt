@@ -50,6 +50,27 @@ ADD_DEFINITIONS(-DPROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
                 -DPROJECT_BINARY_DIR="${CMAKE_BINARY_DIR}")
 
 # ----------------------------------------------------------
+# Build configuration options
+#
+OPTION(BUILD_ALL_COMPONENTS "Build all available components" ON)
+OPTION(BUILD_CORE_ONLY "Build only core components (cogutil, atomspace, unify, ure)" OFF)
+OPTION(BUILD_MINIMAL "Build only minimal set (cogutil, atomspace)" OFF)
+OPTION(BUILD_ROBOTICS_LAYER "Build robotics components (may require ROS)" OFF)
+OPTION(BUILD_LANGUAGE_LAYER "Build language processing components" ON)
+OPTION(BUILD_SPECIALIZED_LAYER "Build specialized domain components" ON)
+OPTION(ENABLE_CCACHE "Use ccache for faster rebuilds" ON)
+
+# Enable ccache if available
+IF(ENABLE_CCACHE)
+    FIND_PROGRAM(CCACHE_PROGRAM ccache)
+    IF(CCACHE_PROGRAM)
+        SET(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+        SET(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+        MESSAGE(STATUS "Using ccache: ${CCACHE_PROGRAM}")
+    ENDIF()
+ENDIF()
+
+# ----------------------------------------------------------
 # Component discovery and target creation
 #
 
@@ -58,24 +79,34 @@ SET(AVAILABLE_COMPONENTS "")
 SET(MISSING_COMPONENTS "")
 
 # Function to check if a component is available and create targets for it
+# Now accepts optional dependency list as 4th argument
 FUNCTION(REGISTER_OPENCOG_COMPONENT component_name component_path layer)
     SET(component_full_path "${CMAKE_SOURCE_DIR}/${component_path}")
+    
+    # Get optional dependencies (4th argument onwards)
+    SET(component_deps ${ARGN})
     
     IF(EXISTS "${component_full_path}/CMakeLists.txt")
         LIST(APPEND AVAILABLE_COMPONENTS "${component_name}")
         SET(AVAILABLE_COMPONENTS ${AVAILABLE_COMPONENTS} PARENT_SCOPE)
         
-        # Create a target for building this component individually
-        ADD_CUSTOM_TARGET(${component_name}
-            COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/${component_name}-build
-            COMMENT "Building ${component_name} component"
+        # Create a target for configuring this component
+        # Pass CMAKE_INSTALL_PREFIX to sub-projects
+        ADD_CUSTOM_TARGET(configure-${component_name}
+            COMMAND ${CMAKE_COMMAND} 
+                -S ${component_full_path} 
+                -B ${CMAKE_BINARY_DIR}/${component_name}-build
+                -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+                -DCMAKE_MODULE_PATH=${CMAKE_INSTALL_PREFIX}/lib/cmake
+            COMMENT "Configuring ${component_name} component"
             VERBATIM
         )
         
-        # Create a target for configuring this component
-        ADD_CUSTOM_TARGET(configure-${component_name}
-            COMMAND ${CMAKE_COMMAND} -S ${component_full_path} -B ${CMAKE_BINARY_DIR}/${component_name}-build
-            COMMENT "Configuring ${component_name} component"
+        # Create a target for building this component individually
+        ADD_CUSTOM_TARGET(${component_name}
+            COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/${component_name}-build -- -j$ENV{PARALLEL_JOBS}
+            COMMENT "Building ${component_name} component"
             VERBATIM
         )
         
@@ -97,6 +128,15 @@ FUNCTION(REGISTER_OPENCOG_COMPONENT component_name component_path layer)
         ADD_DEPENDENCIES(${component_name} configure-${component_name})
         ADD_DEPENDENCIES(install-${component_name} ${component_name})
         
+        # Add explicit dependencies on other OpenCog components
+        FOREACH(dep ${component_deps})
+            IF(TARGET install-${dep})
+                # Component depends on installation of its dependencies
+                ADD_DEPENDENCIES(configure-${component_name} install-${dep})
+                MESSAGE(STATUS "  → ${component_name} depends on ${dep}")
+            ENDIF()
+        ENDFOREACH()
+        
         # Track components by layer for layer-specific install targets
         SET(${layer}_LAYER_COMPONENTS ${${layer}_LAYER_COMPONENTS} ${component_name} PARENT_SCOPE)
         
@@ -110,6 +150,7 @@ ENDFUNCTION()
 
 # ----------------------------------------------------------
 # Register components by dependency layer
+# Components now include their OpenCog dependencies for proper build ordering
 #
 
 MESSAGE(STATUS "")
@@ -118,86 +159,100 @@ MESSAGE(STATUS "OpenCog Organization Repository - Component Discovery")
 MESSAGE(STATUS "=============================================================")
 
 MESSAGE(STATUS "")
-MESSAGE(STATUS "--- Discovering Foundation Layer Components ---")
+MESSAGE(STATUS "--- Discovering Foundation Layer Components (Tier 0) ---")
+# Foundation layer has no OpenCog dependencies
 REGISTER_OPENCOG_COMPONENT("cogutil" "cogutil" "Foundation")
-REGISTER_OPENCOG_COMPONENT("moses" "moses" "Foundation") 
+REGISTER_OPENCOG_COMPONENT("moses" "moses" "Foundation" cogutil)
 REGISTER_OPENCOG_COMPONENT("blender_api_msgs" "blender_api_msgs" "Foundation")
 REGISTER_OPENCOG_COMPONENT("external-tools" "external-tools" "Foundation")
 REGISTER_OPENCOG_COMPONENT("ocpkg" "ocpkg" "Foundation")
+REGISTER_OPENCOG_COMPONENT("link-grammar" "link-grammar" "Foundation")
+REGISTER_OPENCOG_COMPONENT("language-learning" "language-learning" "Foundation")
 
 MESSAGE(STATUS "")
-MESSAGE(STATUS "--- Discovering Core Layer Components ---")
-REGISTER_OPENCOG_COMPONENT("atomspace" "atomspace" "Core")
-REGISTER_OPENCOG_COMPONENT("atomspace-rocks" "atomspace-rocks" "Core")
-REGISTER_OPENCOG_COMPONENT("atomspace-pgres" "atomspace-pgres" "Core")
-REGISTER_OPENCOG_COMPONENT("atomspace-ipfs" "atomspace-ipfs" "Core") 
-REGISTER_OPENCOG_COMPONENT("atomspace-websockets" "atomspace-websockets" "Core")
-REGISTER_OPENCOG_COMPONENT("atomspace-restful" "atomspace-restful" "Core")
-REGISTER_OPENCOG_COMPONENT("atomspace-bridge" "atomspace-bridge" "Core")
-REGISTER_OPENCOG_COMPONENT("atomspace-metta" "atomspace-metta" "Core")
-REGISTER_OPENCOG_COMPONENT("atomspace-rpc" "atomspace-rpc" "Core")
-REGISTER_OPENCOG_COMPONENT("atomspace-cog" "atomspace-cog" "Core")
-REGISTER_OPENCOG_COMPONENT("atomspace-agents" "atomspace-agents" "Core")
-REGISTER_OPENCOG_COMPONENT("atomspace-dht" "atomspace-dht" "Core")
-REGISTER_OPENCOG_COMPONENT("atomspace-storage" "atomspace-storage" "Core")
+MESSAGE(STATUS "--- Discovering Core Layer Components (Tier 1-2) ---")
+# Core layer depends on cogutil
+REGISTER_OPENCOG_COMPONENT("atomspace" "atomspace" "Core" cogutil)
+REGISTER_OPENCOG_COMPONENT("atomspace-storage" "atomspace-storage" "Core" cogutil atomspace)
+REGISTER_OPENCOG_COMPONENT("atomspace-agents" "atomspace-agents" "Core" cogutil atomspace)
+REGISTER_OPENCOG_COMPONENT("atomspace-dht" "atomspace-dht" "Core" cogutil atomspace)
+REGISTER_OPENCOG_COMPONENT("atomspace-ipfs" "atomspace-ipfs" "Core" cogutil atomspace)
+REGISTER_OPENCOG_COMPONENT("atomspace-websockets" "atomspace-websockets" "Core" cogutil atomspace)
+REGISTER_OPENCOG_COMPONENT("atomspace-bridge" "atomspace-bridge" "Core" cogutil atomspace)
+REGISTER_OPENCOG_COMPONENT("atomspace-metta" "atomspace-metta" "Core" cogutil atomspace)
+REGISTER_OPENCOG_COMPONENT("atomspace-rpc" "atomspace-rpc" "Core" cogutil atomspace)
+# These depend on atomspace-storage
+REGISTER_OPENCOG_COMPONENT("atomspace-rocks" "atomspace-rocks" "Core" cogutil atomspace atomspace-storage)
+REGISTER_OPENCOG_COMPONENT("atomspace-pgres" "atomspace-pgres" "Core" cogutil atomspace atomspace-storage)
 
 MESSAGE(STATUS "")
-MESSAGE(STATUS "--- Discovering Logic Layer Components ---")
-REGISTER_OPENCOG_COMPONENT("unify" "unify" "Logic")
-REGISTER_OPENCOG_COMPONENT("ure" "ure" "Logic")
+MESSAGE(STATUS "--- Discovering Logic Layer Components (Tier 2-3) ---")
+REGISTER_OPENCOG_COMPONENT("unify" "unify" "Logic" cogutil atomspace)
+REGISTER_OPENCOG_COMPONENT("ure" "ure" "Logic" cogutil atomspace unify)
+REGISTER_OPENCOG_COMPONENT("spacetime" "spacetime" "Cognitive" cogutil atomspace)
 
 MESSAGE(STATUS "")
-MESSAGE(STATUS "--- Discovering Cognitive Layer Components ---")
-REGISTER_OPENCOG_COMPONENT("cogserver" "cogserver" "Cognitive")
-REGISTER_OPENCOG_COMPONENT("attention" "attention" "Cognitive")
-REGISTER_OPENCOG_COMPONENT("spacetime" "spacetime" "Cognitive")
-REGISTER_OPENCOG_COMPONENT("pattern-index" "pattern-index" "Cognitive")
-REGISTER_OPENCOG_COMPONENT("dimensional-embedding" "dimensional-embedding" "Cognitive")
+MESSAGE(STATUS "--- Discovering Cognitive Layer Components (Tier 3-4) ---")
+REGISTER_OPENCOG_COMPONENT("cogserver" "cogserver" "Cognitive" cogutil atomspace atomspace-storage)
+REGISTER_OPENCOG_COMPONENT("attention" "attention" "Cognitive" cogutil atomspace cogserver)
+REGISTER_OPENCOG_COMPONENT("pattern-index" "pattern-index" "Cognitive" cogutil atomspace)
+REGISTER_OPENCOG_COMPONENT("dimensional-embedding" "dimensional-embedding" "Cognitive" cogutil atomspace)
 REGISTER_OPENCOG_COMPONENT("profile" "profile" "Cognitive")
+# atomspace-cog and atomspace-restful depend on cogserver
+REGISTER_OPENCOG_COMPONENT("atomspace-cog" "atomspace-cog" "Cognitive" cogutil atomspace cogserver)
+REGISTER_OPENCOG_COMPONENT("atomspace-restful" "atomspace-restful" "Cognitive" cogutil atomspace cogserver)
 
 MESSAGE(STATUS "")
-MESSAGE(STATUS "--- Discovering Advanced Layer Components ---")
-REGISTER_OPENCOG_COMPONENT("pln" "pln" "Advanced")
-REGISTER_OPENCOG_COMPONENT("miner" "miner" "Advanced")
-REGISTER_OPENCOG_COMPONENT("asmoses" "asmoses" "Advanced")
-REGISTER_OPENCOG_COMPONENT("benchmark" "benchmark" "Advanced")
+MESSAGE(STATUS "--- Discovering Advanced Layer Components (Tier 4-5) ---")
+REGISTER_OPENCOG_COMPONENT("pln" "pln" "Advanced" cogutil atomspace spacetime unify ure)
+REGISTER_OPENCOG_COMPONENT("miner" "miner" "Advanced" cogutil atomspace unify ure)
+REGISTER_OPENCOG_COMPONENT("asmoses" "asmoses" "Advanced" cogutil atomspace ure)
+REGISTER_OPENCOG_COMPONENT("benchmark" "benchmark" "Advanced" cogutil atomspace ure)
 
 MESSAGE(STATUS "")
-MESSAGE(STATUS "--- Discovering Learning Layer Components ---")
-REGISTER_OPENCOG_COMPONENT("learn" "learn" "Learning")
-REGISTER_OPENCOG_COMPONENT("generate" "generate" "Learning")
-REGISTER_OPENCOG_COMPONENT("language-learning" "language-learning" "Learning")
+MESSAGE(STATUS "--- Discovering Learning Layer Components (Tier 3-4) ---")
+REGISTER_OPENCOG_COMPONENT("learn" "learn" "Learning" cogutil atomspace cogserver atomspace-rocks)
+REGISTER_OPENCOG_COMPONENT("generate" "generate" "Learning" cogutil atomspace)
 
 MESSAGE(STATUS "")
-MESSAGE(STATUS "--- Discovering Language Layer Components ---")
-REGISTER_OPENCOG_COMPONENT("lg-atomese" "lg-atomese" "Language")
-REGISTER_OPENCOG_COMPONENT("relex" "relex" "Language")
-REGISTER_OPENCOG_COMPONENT("link-grammar" "link-grammar" "Language")
+MESSAGE(STATUS "--- Discovering Language Layer Components (Tier 2-3) ---")
+REGISTER_OPENCOG_COMPONENT("lg-atomese" "lg-atomese" "Language" cogutil atomspace atomspace-storage link-grammar)
+REGISTER_OPENCOG_COMPONENT("relex" "relex" "Language" cogutil)
 
 MESSAGE(STATUS "")
-MESSAGE(STATUS "--- Discovering Robotics Layer Components ---")
-REGISTER_OPENCOG_COMPONENT("vision" "vision" "Robotics")
-REGISTER_OPENCOG_COMPONENT("perception" "perception" "Robotics") 
-REGISTER_OPENCOG_COMPONENT("sensory" "sensory" "Robotics")
-REGISTER_OPENCOG_COMPONENT("ros-behavior-scripting" "ros-behavior-scripting" "Robotics")
-REGISTER_OPENCOG_COMPONENT("robots_config" "robots_config" "Robotics")
-REGISTER_OPENCOG_COMPONENT("pau2motors" "pau2motors" "Robotics")
-REGISTER_OPENCOG_COMPONENT("motor" "motor" "Robotics")
+MESSAGE(STATUS "--- Discovering Robotics Layer Components (Tier 2) ---")
+IF(BUILD_ROBOTICS_LAYER OR BUILD_ALL_COMPONENTS)
+    REGISTER_OPENCOG_COMPONENT("vision" "vision" "Robotics" cogutil atomspace)
+    REGISTER_OPENCOG_COMPONENT("perception" "perception" "Robotics")
+    REGISTER_OPENCOG_COMPONENT("sensory" "sensory" "Robotics" cogutil atomspace)
+    REGISTER_OPENCOG_COMPONENT("ros-behavior-scripting" "ros-behavior-scripting" "Robotics")
+    REGISTER_OPENCOG_COMPONENT("robots_config" "robots_config" "Robotics")
+    REGISTER_OPENCOG_COMPONENT("pau2motors" "pau2motors" "Robotics")
+    REGISTER_OPENCOG_COMPONENT("motor" "motor" "Robotics")
+ELSE()
+    MESSAGE(STATUS "Robotics layer disabled (use -DBUILD_ROBOTICS_LAYER=ON to enable)")
+ENDIF()
 
 MESSAGE(STATUS "")
-MESSAGE(STATUS "--- Discovering Integration Layer Components ---")
-REGISTER_OPENCOG_COMPONENT("opencog" "opencog" "Integration")
-REGISTER_OPENCOG_COMPONENT("TinyCog" "TinyCog" "Integration")
+MESSAGE(STATUS "--- Discovering Integration Layer Components (Tier 5-6) ---")
+REGISTER_OPENCOG_COMPONENT("opencog" "opencog" "Integration" 
+    cogutil atomspace cogserver attention ure pln lg-atomese)
+REGISTER_OPENCOG_COMPONENT("TinyCog" "TinyCog" "Integration" atomspace)
 
 MESSAGE(STATUS "")
 MESSAGE(STATUS "--- Discovering Specialized Components ---")
-REGISTER_OPENCOG_COMPONENT("visualization" "visualization" "Specialized")
-REGISTER_OPENCOG_COMPONENT("cheminformatics" "cheminformatics" "Specialized")
-REGISTER_OPENCOG_COMPONENT("agi-bio" "agi-bio" "Specialized")
-REGISTER_OPENCOG_COMPONENT("ghost_bridge" "ghost_bridge" "Specialized")
-REGISTER_OPENCOG_COMPONENT("matrix" "matrix" "Specialized")
-REGISTER_OPENCOG_COMPONENT("python-attic" "python-attic" "Specialized")
-REGISTER_OPENCOG_COMPONENT("atomese-simd" "atomese-simd" "Specialized")
+IF(BUILD_SPECIALIZED_LAYER OR BUILD_ALL_COMPONENTS)
+    REGISTER_OPENCOG_COMPONENT("visualization" "visualization" "Specialized" cogutil atomspace)
+    REGISTER_OPENCOG_COMPONENT("cheminformatics" "cheminformatics" "Specialized" cogutil atomspace)
+    REGISTER_OPENCOG_COMPONENT("agi-bio" "agi-bio" "Specialized" cogutil atomspace)
+    REGISTER_OPENCOG_COMPONENT("ghost_bridge" "ghost_bridge" "Specialized")
+    REGISTER_OPENCOG_COMPONENT("matrix" "matrix" "Specialized" cogutil atomspace)
+    REGISTER_OPENCOG_COMPONENT("python-attic" "python-attic" "Specialized" 
+        cogutil atomspace cogserver pln ure link-grammar)
+    REGISTER_OPENCOG_COMPONENT("atomese-simd" "atomese-simd" "Specialized" cogutil atomspace sensory)
+ELSE()
+    MESSAGE(STATUS "Specialized layer disabled (use -DBUILD_SPECIALIZED_LAYER=ON to enable)")
+ENDIF()
 
 # ----------------------------------------------------------
 # Collective build targets
