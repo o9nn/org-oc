@@ -118,10 +118,10 @@ esac
 
 echo ""
 log "✅ Bootstrap complete!"
-log_info ""
+echo ""
 log_info "What's next:"
 log_info "  • Run tests: cd build/cogutil-build && make test"
 log_info "  • Build more: ./scripts/build-opencog.sh --tier 5"
 log_info "  • Full build: ./scripts/build-opencog.sh --install"
-log_info ""
+echo ""
 log_info "Documentation: CMAKE_BUILD_GUIDE.md"
