@@ -41,7 +41,7 @@ on:
 env:
   CMAKE_BUILD_TYPE: Release
   INSTALL_PREFIX: /usr/local
-  MAKEFLAGS: -j$(nproc)
+  # MAKEFLAGS set per-step to use dynamic nproc
 
 permissions:
   contents: read

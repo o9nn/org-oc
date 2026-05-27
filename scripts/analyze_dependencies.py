@@ -249,20 +249,25 @@ class DependencyAnalyzer:
         
         # Find all FIND_PACKAGE directives
         # Pattern matches: FIND_PACKAGE(Name VERSION REQUIRED CONFIG)
+        # Simplified pattern to avoid ReDoS - capture full content then parse
         find_pkg_pattern = re.compile(
             r'FIND_PACKAGE\s*\(\s*'
             r'(\w+)'                           # Package name
-            r'(?:\s+([\d.]+))?'                # Optional version
-            r'(?:\s+(\w+))?'                   # Optional additional args
-            r'(?:\s+(CONFIG|MODULE|REQUIRED|QUIET|COMPONENTS?|\w+))*'
-            r'\s*\)',
+            r'([^)]*)'                         # Everything else until closing paren
+            r'\)',
             re.IGNORECASE | re.MULTILINE
         )
         
         for match in find_pkg_pattern.finditer(content):
             pkg_name = match.group(1)
-            version = match.group(2)
+            args_str = match.group(2)
             full_match = match.group(0)
+            
+            # Parse version from args (first numeric-like token)
+            version = None
+            version_match = re.search(r'\b([\d.]+)\b', args_str)
+            if version_match:
+                version = version_match.group(1)
             
             required = 'REQUIRED' in full_match.upper()
             config_mode = 'CONFIG' in full_match.upper()
@@ -316,18 +321,13 @@ class DependencyAnalyzer:
         # Packages with no internal dependencies are tier 0
         in_degree = {pkg: 0 for pkg in self.packages if self.packages[pkg].has_cmake}
         
-        for pkg in self.packages:
-            if not self.packages[pkg].has_cmake:
-                continue
-            for dep in self.dependency_graph.get(pkg, set()):
-                if dep in in_degree:
-                    in_degree[pkg] = in_degree.get(pkg, 0)  # Ensure pkg exists
-                    
-        # Calculate in-degrees
+        # Calculate in-degrees: count how many packages depend on each package
         for pkg, deps in self.dependency_graph.items():
+            if not self.packages.get(pkg, Package('', '')).has_cmake:
+                continue
             for dep in deps:
                 if dep in in_degree:
-                    in_degree[dep] = in_degree.get(dep, 0)
+                    in_degree[dep] = in_degree.get(dep, 0) + 1
         
         # BFS to assign tiers
         current_tier = 0

@@ -182,10 +182,26 @@ install_dev_tools() {
 install_ros_deps() {
     log "Installing ROS integration dependencies..."
     
-    # Check if ROS is installed
+    # Check if ROS is installed and detect distribution
     if [ -d /opt/ros ]; then
-        apt-get install -y \
-            ros-*-catkin || log_warn "catkin not available"
+        # Find installed ROS distribution
+        local ros_distro=""
+        for distro in noetic melodic foxy humble iron jazzy; do
+            if [ -d "/opt/ros/$distro" ]; then
+                ros_distro="$distro"
+                break
+            fi
+        done
+        
+        if [ -n "$ros_distro" ]; then
+            log_info "Detected ROS distribution: $ros_distro"
+            apt-get install -y \
+                "ros-${ros_distro}-catkin" \
+                "ros-${ros_distro}-roscpp" \
+                "ros-${ros_distro}-rospy" || log_warn "ROS packages not available"
+        else
+            log_warn "Could not detect ROS distribution"
+        fi
     else
         log_warn "ROS not found. Please install ROS first."
     fi

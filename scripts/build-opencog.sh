@@ -42,8 +42,8 @@ VERBOSE=false
 
 # Build order by tier (generated from dependency analysis)
 declare -A TIER_PACKAGES=(
-    [0]="cogutil link-grammar moses external-tools ocpkg language-learning blender_api_msgs"
-    [1]="atomspace"
+    [0]="cogutil link-grammar external-tools ocpkg language-learning blender_api_msgs"
+    [1]="atomspace moses"
     [2]="atomspace-storage unify spacetime generate pattern-index atomspace-agents atomspace-rpc atomspace-websockets atomspace-ipfs atomspace-metta atomspace-dht atomspace-bridge sensory vision agi-bio cheminformatics TinyCog"
     [3]="atomspace-rocks atomspace-pgres cogserver lg-atomese ure atomese-simd"
     [4]="attention learn miner matrix dimensional-embedding"
