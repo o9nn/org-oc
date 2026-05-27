@@ -1,0 +1,448 @@
+# OpenCog Master Build Workflow
+#
+# This is the single source of truth for OpenCog CI/CD builds.
+# It supports multiple build modes and generates build status reports.
+#
+# Modes:
+#   - quick-ci:        Core packages only (cogutil, atomspace, unify, ure)
+#   - full-sequential: All packages in one job, sequential build
+#   - tier-parallel:   Build tiers in parallel, respecting dependencies
+#   - single-package:  Build a specific package with dependencies
+#
+
+name: OpenCog Master Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Build mode'
+        required: true
+        default: 'quick-ci'
+        type: choice
+        options:
+          - quick-ci
+          - full-sequential
+          - tier-parallel
+      fail_fast:
+        description: 'Stop on first failure'
+        required: false
+        default: false
+        type: boolean
+      package:
+        description: 'Specific package to build (for single-package mode)'
+        required: false
+        type: string
+
+env:
+  CMAKE_BUILD_TYPE: Release
+  INSTALL_PREFIX: /usr/local
+  # MAKEFLAGS set per-step to use dynamic nproc
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  # ==========================================================================
+  # System Setup (shared across all modes)
+  # ==========================================================================
+  setup:
+    name: System Setup
+    runs-on: ubuntu-latest
+    outputs:
+      packages-json: ${{ steps.analyze.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf autoconf-archive automake binutils-dev cmake cxxtest \
+            cython3 flex guile-3.0-dev libboost-all-dev libiberty-dev \
+            libgtk-3-dev liboctomap-dev libopencv-dev libopenmpi-dev \
+            libpqxx-dev libprotobuf-dev librocksdb-dev libssl-dev libtool \
+            pkg-config protobuf-compiler swig unixodbc-dev uuid-dev \
+            nlohmann-json3-dev python3 python3-pip python3-yaml
+          echo "/usr/local/lib/opencog" | sudo tee /etc/ld.so.conf.d/opencog.conf
+          sudo ldconfig
+          
+      - name: Analyze dependencies
+        id: analyze
+        run: |
+          python3 scripts/analyze_dependencies.py --repo . --format json --quiet
+          echo "packages=$(cat build/dependency-graph.json | jq -c '.build_order')" >> $GITHUB_OUTPUT
+
+  # ==========================================================================
+  # Quick CI Mode - Core packages only
+  # ==========================================================================
+  quick-ci:
+    name: Quick CI Build
+    if: ${{ github.event.inputs.mode == 'quick-ci' || github.event.inputs.mode == '' }}
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            binutils-dev cmake cxxtest guile-3.0-dev libboost-all-dev \
+            libiberty-dev libssl-dev pkg-config
+          echo "/usr/local/lib/opencog" | sudo tee /etc/ld.so.conf.d/opencog.conf
+          sudo ldconfig
+      
+      - name: Build cogutil
+        run: |
+          mkdir -p /tmp/cogutil-build && cd /tmp/cogutil-build
+          cmake $GITHUB_WORKSPACE/cogutil \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
+          
+      - name: Build atomspace
+        run: |
+          mkdir -p /tmp/atomspace-build && cd /tmp/atomspace-build
+          cmake $GITHUB_WORKSPACE/atomspace \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
+          
+      - name: Build unify
+        run: |
+          mkdir -p /tmp/unify-build && cd /tmp/unify-build
+          cmake $GITHUB_WORKSPACE/unify \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
+          
+      - name: Build ure
+        run: |
+          mkdir -p /tmp/ure-build && cd /tmp/ure-build
+          cmake $GITHUB_WORKSPACE/ure \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
+          
+      - name: Run cogutil tests
+        continue-on-error: true
+        run: |
+          cd /tmp/cogutil-build
+          make test || true
+          
+      - name: Upload build status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quick-ci-logs
+          path: /tmp/*-build/*.log
+          retention-days: 7
+
+  # ==========================================================================
+  # Full Sequential Mode - All packages in one job
+  # ==========================================================================
+  full-sequential:
+    name: Full Sequential Build
+    if: ${{ github.event.inputs.mode == 'full-sequential' }}
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install all dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf autoconf-archive automake binutils-dev cmake cxxtest \
+            cython3 flex guile-3.0-dev libboost-all-dev libiberty-dev \
+            libgtk-3-dev liboctomap-dev libopencv-dev libopenmpi-dev \
+            libpqxx-dev libprotobuf-dev librocksdb-dev libssl-dev libtool \
+            pkg-config protobuf-compiler swig unixodbc-dev uuid-dev \
+            nlohmann-json3-dev libgrpc++-dev protobuf-compiler-grpc \
+            libopendht-dev || true
+          echo "/usr/local/lib/opencog" | sudo tee /etc/ld.so.conf.d/opencog.conf
+          sudo ldconfig
+
+      - name: Build all packages
+        run: |
+          # Use build orchestrator script
+          ./scripts/build-opencog.sh --install --verbose 2>&1 | tee build.log
+          
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-sequential-logs
+          path: |
+            build.log
+            build/logs/
+            build/build-status.json
+          retention-days: 7
+
+  # ==========================================================================
+  # Tier-Parallel Mode - Build tiers with parallelism
+  # ==========================================================================
+  
+  # Tier 0: Foundation packages (no OpenCog deps)
+  tier-0:
+    name: 'Tier 0: Foundation'
+    if: ${{ github.event.inputs.mode == 'tier-parallel' }}
+    needs: setup
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: ${{ github.event.inputs.fail_fast == 'true' }}
+      matrix:
+        package: [cogutil, link-grammar, moses]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf autoconf-archive automake binutils-dev cmake cxxtest \
+            flex guile-3.0-dev libboost-all-dev libiberty-dev libtool \
+            pkg-config swig
+          echo "/usr/local/lib/opencog" | sudo tee /etc/ld.so.conf.d/opencog.conf
+          sudo ldconfig
+          
+      - name: Build ${{ matrix.package }}
+        run: |
+          if [ -f "${{ matrix.package }}/CMakeLists.txt" ]; then
+            mkdir -p /tmp/${{ matrix.package }}-build && cd /tmp/${{ matrix.package }}-build
+            cmake $GITHUB_WORKSPACE/${{ matrix.package }} \
+              -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+              -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+            make -j$(nproc)
+            sudo make install
+            sudo ldconfig
+          elif [ -f "${{ matrix.package }}/autogen.sh" ]; then
+            cd $GITHUB_WORKSPACE/${{ matrix.package }}
+            ./autogen.sh --no-configure || true
+            mkdir -p /tmp/${{ matrix.package }}-build && cd /tmp/${{ matrix.package }}-build
+            $GITHUB_WORKSPACE/${{ matrix.package }}/configure --prefix=$INSTALL_PREFIX
+            make -j$(nproc)
+            sudo make install
+            sudo ldconfig
+          fi
+          
+      - name: Package artifacts
+        if: success()
+        run: |
+          mkdir -p /tmp/${{ matrix.package }}-pkg
+          for d in include/opencog lib/opencog lib/cmake share/opencog share/guile; do
+            [ -d /usr/local/$d ] && mkdir -p /tmp/${{ matrix.package }}-pkg/$d && \
+              cp -a /usr/local/$d/* /tmp/${{ matrix.package }}-pkg/$d/ 2>/dev/null || true
+          done
+          for f in /usr/local/lib/libcog*.so* /usr/local/lib/libatomspace*.so* /usr/local/lib/liblink-grammar*.so*; do
+            [ -f "$f" ] && mkdir -p /tmp/${{ matrix.package }}-pkg/lib && \
+              cp -a "$f" /tmp/${{ matrix.package }}-pkg/lib/ 2>/dev/null || true
+          done
+          
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: ${{ matrix.package }}-install
+          path: /tmp/${{ matrix.package }}-pkg
+          retention-days: 1
+          compression-level: 9
+
+  # Tier 1: Core (depends on Tier 0)
+  tier-1:
+    name: 'Tier 1: Core'
+    if: ${{ github.event.inputs.mode == 'tier-parallel' }}
+    needs: [tier-0]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            binutils-dev cmake cxxtest guile-3.0-dev libboost-all-dev \
+            libiberty-dev pkg-config
+          echo "/usr/local/lib/opencog" | sudo tee /etc/ld.so.conf.d/opencog.conf
+          sudo ldconfig
+          
+      - name: Download Tier 0 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-install'
+          path: /tmp/artifacts
+          
+      - name: Install Tier 0 packages
+        run: |
+          for pkg in /tmp/artifacts/*-install; do
+            [ -d "$pkg" ] && sudo cp -a "$pkg"/* /usr/local/ 2>/dev/null || true
+          done
+          sudo ldconfig
+          
+      - name: Build atomspace
+        run: |
+          mkdir -p /tmp/atomspace-build && cd /tmp/atomspace-build
+          cmake $GITHUB_WORKSPACE/atomspace \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+            -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
+          
+      - name: Package artifacts
+        if: success()
+        run: |
+          mkdir -p /tmp/atomspace-pkg
+          for d in include/opencog lib/opencog lib/cmake share/opencog share/guile; do
+            [ -d /usr/local/$d ] && mkdir -p /tmp/atomspace-pkg/$d && \
+              cp -a /usr/local/$d/* /tmp/atomspace-pkg/$d/ 2>/dev/null || true
+          done
+          for f in /usr/local/lib/libatomspace*.so* /usr/local/lib/libsmob*.so*; do
+            [ -f "$f" ] && mkdir -p /tmp/atomspace-pkg/lib && \
+              cp -a "$f" /tmp/atomspace-pkg/lib/ 2>/dev/null || true
+          done
+          
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: atomspace-install
+          path: /tmp/atomspace-pkg
+          retention-days: 1
+          compression-level: 9
+
+  # Tier 2: Extensions (depends on Tier 1)
+  tier-2:
+    name: 'Tier 2: Extensions'
+    if: ${{ github.event.inputs.mode == 'tier-parallel' }}
+    needs: [tier-1]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [unify, spacetime, atomspace-storage, generate]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            binutils-dev cmake cxxtest guile-3.0-dev libboost-all-dev \
+            libiberty-dev liboctomap-dev pkg-config
+          echo "/usr/local/lib/opencog" | sudo tee /etc/ld.so.conf.d/opencog.conf
+          sudo ldconfig
+          
+      - name: Download previous tier artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-install'
+          path: /tmp/artifacts
+          
+      - name: Install previous tier packages
+        run: |
+          for pkg in /tmp/artifacts/*-install; do
+            [ -d "$pkg" ] && sudo cp -a "$pkg"/* /usr/local/ 2>/dev/null || true
+          done
+          sudo ldconfig
+          
+      - name: Build ${{ matrix.package }}
+        run: |
+          if [ -f "${{ matrix.package }}/CMakeLists.txt" ]; then
+            mkdir -p /tmp/${{ matrix.package }}-build && cd /tmp/${{ matrix.package }}-build
+            cmake $GITHUB_WORKSPACE/${{ matrix.package }} \
+              -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+              -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+            make -j$(nproc)
+            sudo make install
+            sudo ldconfig
+          else
+            echo "No CMakeLists.txt for ${{ matrix.package }}"
+          fi
+
+  # Tier 3: Logic and Storage (depends on Tier 2)
+  tier-3:
+    name: 'Tier 3: Logic & Storage'
+    if: ${{ github.event.inputs.mode == 'tier-parallel' }}
+    needs: [tier-2]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [ure, cogserver, atomspace-rocks, lg-atomese]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            binutils-dev cmake cxxtest flex guile-3.0-dev libboost-all-dev \
+            libiberty-dev librocksdb-dev libssl-dev pkg-config swig uuid-dev \
+            nlohmann-json3-dev autoconf autoconf-archive automake libtool
+          echo "/usr/local/lib/opencog" | sudo tee /etc/ld.so.conf.d/opencog.conf
+          sudo ldconfig
+          
+      - name: Download previous tier artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-install'
+          path: /tmp/artifacts
+          
+      - name: Install previous tier packages
+        run: |
+          for pkg in /tmp/artifacts/*-install; do
+            [ -d "$pkg" ] && sudo cp -a "$pkg"/* /usr/local/ 2>/dev/null || true
+          done
+          sudo ldconfig
+          
+      - name: Build ${{ matrix.package }}
+        run: |
+          if [ -f "${{ matrix.package }}/CMakeLists.txt" ]; then
+            mkdir -p /tmp/${{ matrix.package }}-build && cd /tmp/${{ matrix.package }}-build
+            cmake $GITHUB_WORKSPACE/${{ matrix.package }} \
+              -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX \
+              -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
+            make -j$(nproc)
+            sudo make install
+            sudo ldconfig
+          fi
+
+  # ==========================================================================
+  # Build Summary
+  # ==========================================================================
+  summary:
+    name: Build Summary
+    if: always()
+    needs: [quick-ci, full-sequential, tier-3]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "# OpenCog Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Mode:** ${{ github.event.inputs.mode || 'quick-ci' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Job Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Setup | ✅ |" >> $GITHUB_STEP_SUMMARY

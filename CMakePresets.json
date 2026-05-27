@@ -1,0 +1,165 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 21,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "installDir": "/usr/local",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "default",
+            "displayName": "Default Configuration",
+            "description": "Build core OpenCog packages (cogutil, atomspace, unify, ure, cogserver)",
+            "inherits": "base",
+            "cacheVariables": {
+                "BUILD_CORE_ONLY": "ON",
+                "BUILD_ROBOTICS_LAYER": "OFF",
+                "BUILD_LANGUAGE_LAYER": "OFF",
+                "BUILD_SPECIALIZED_LAYER": "OFF"
+            }
+        },
+        {
+            "name": "minimal",
+            "displayName": "Minimal Build",
+            "description": "Build only cogutil and atomspace",
+            "inherits": "base",
+            "cacheVariables": {
+                "BUILD_MINIMAL": "ON",
+                "BUILD_CORE_ONLY": "OFF"
+            }
+        },
+        {
+            "name": "full",
+            "displayName": "Full Build",
+            "description": "Build all available OpenCog packages",
+            "inherits": "base",
+            "cacheVariables": {
+                "BUILD_CORE_ONLY": "OFF",
+                "BUILD_ROBOTICS_LAYER": "ON",
+                "BUILD_LANGUAGE_LAYER": "ON",
+                "BUILD_SPECIALIZED_LAYER": "ON",
+                "BUILD_ALL_COMPONENTS": "ON"
+            }
+        },
+        {
+            "name": "language",
+            "displayName": "Language Processing",
+            "description": "Build core + NLP packages (link-grammar, lg-atomese, learn)",
+            "inherits": "default",
+            "cacheVariables": {
+                "BUILD_LANGUAGE_LAYER": "ON"
+            }
+        },
+        {
+            "name": "robotics",
+            "displayName": "Robotics Build",
+            "description": "Build core + robotics packages (requires ROS)",
+            "inherits": "default",
+            "cacheVariables": {
+                "BUILD_ROBOTICS_LAYER": "ON",
+                "BUILD_REQUIRES_ROS": "ON"
+            }
+        },
+        {
+            "name": "debug",
+            "displayName": "Debug Build",
+            "description": "Debug build with symbols",
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_FLAGS": "-g -O0 -Wall -Wextra"
+            }
+        },
+        {
+            "name": "ci",
+            "displayName": "CI Build",
+            "description": "Optimized for CI/CD pipelines",
+            "inherits": "full",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_TESTING": "ON",
+                "ENABLE_CCACHE": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "default",
+            "configurePreset": "default",
+            "jobs": 0,
+            "targets": ["all-components"]
+        },
+        {
+            "name": "minimal",
+            "configurePreset": "minimal",
+            "jobs": 0,
+            "targets": ["cogutil", "atomspace"]
+        },
+        {
+            "name": "full",
+            "configurePreset": "full",
+            "jobs": 0,
+            "targets": ["all-components"]
+        },
+        {
+            "name": "foundation",
+            "configurePreset": "default",
+            "jobs": 0,
+            "targets": ["Foundation-layer"]
+        },
+        {
+            "name": "core",
+            "configurePreset": "default",
+            "jobs": 0,
+            "targets": ["Core-layer"]
+        },
+        {
+            "name": "logic",
+            "configurePreset": "default",
+            "jobs": 0,
+            "targets": ["Logic-layer"]
+        },
+        {
+            "name": "cognitive",
+            "configurePreset": "default",
+            "jobs": 0,
+            "targets": ["Cognitive-layer"]
+        },
+        {
+            "name": "ci",
+            "configurePreset": "ci",
+            "jobs": 0,
+            "targets": ["all-components"]
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "default",
+            "configurePreset": "default",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "ci",
+            "configurePreset": "ci",
+            "output": {
+                "outputOnFailure": true,
+                "verbosity": "verbose"
+            },
+            "execution": {
+                "stopOnFailure": false
+            }
+        }
+    ]
+}

@@ -4,20 +4,50 @@ This document describes the unified CMake build system for the OpenCog Organizat
 
 ## Overview
 
-The OpenCog Organization repository contains 46+ individual OpenCog components, each with their own CMakeLists.txt and build requirements. The unified build system provides:
+The OpenCog Organization repository contains 90+ individual OpenCog components, each with their own CMakeLists.txt and build requirements. The unified build system provides:
 
 - **Component Discovery**: Automatically finds all buildable components
-- **Dependency-Aware Organization**: Components are organized by dependency layers
+- **Dependency-Aware Ordering**: Components are built in the correct order based on their dependencies
+- **Build Presets**: Standardized configurations for different use cases
 - **Individual Component Builds**: Each component builds in its own isolated directory
 - **Collective Build Targets**: Build entire layers or all components at once
 - **Clear Status Reporting**: Know exactly what's available and what's missing
+- **Build Orchestration**: Script-based builds with progress tracking
 
 ## Quick Start
 
+### Option 1: Using the Build Orchestrator (Recommended)
+
+```bash
+# Install system dependencies (Ubuntu)
+sudo ./scripts/install-deps-ubuntu.sh
+
+# Build all packages
+./scripts/build-opencog.sh --install
+
+# Or build only core packages
+./scripts/build-opencog.sh --tier 2 --install
+```
+
+### Option 2: Using CMake Presets
+
+```bash
+# Configure with minimal preset (cogutil + atomspace only)
+cmake --preset=minimal
+
+# Configure with full preset (all packages)
+cmake --preset=full
+
+# Build
+cmake --build --preset=minimal
+```
+
+### Option 3: Traditional CMake
+
 ```bash
 # Clone the repository (if not already done)
-git clone https://github.com/OpenCoq/opencog-org.git
-cd opencog-org
+git clone https://github.com/opencog/org-oc.git
+cd org-oc
 
 # Configure the unified build system
 mkdir build && cd build
@@ -37,6 +67,25 @@ make configure-all
 
 # Build all available components (may take a long time!)
 make all-components
+```
+
+## Build Options
+
+The build system supports several configuration options:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `BUILD_ALL_COMPONENTS` | ON | Build all available components |
+| `BUILD_CORE_ONLY` | OFF | Build only core components (cogutil, atomspace, unify, ure) |
+| `BUILD_MINIMAL` | OFF | Build only minimal set (cogutil, atomspace) |
+| `BUILD_ROBOTICS_LAYER` | OFF | Build robotics components (may require ROS) |
+| `BUILD_LANGUAGE_LAYER` | ON | Build language processing components |
+| `BUILD_SPECIALIZED_LAYER` | ON | Build specialized domain components |
+| `ENABLE_CCACHE` | ON | Use ccache for faster rebuilds |
+
+Example:
+```bash
+cmake .. -DBUILD_ROBOTICS_LAYER=ON -DBUILD_CORE_ONLY=OFF
 ```
 
 ## Available Build Targets

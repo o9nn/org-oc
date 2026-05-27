@@ -1,0 +1,469 @@
+# OpenCog System Dependencies Configuration
+#
+# This file defines all system-level dependencies for OpenCog packages.
+# Used by installer scripts and CI workflows.
+#
+# Format:
+#   common: Dependencies required by all packages
+#   packages: Package-specific dependencies
+#
+
+schema_version: "1.0"
+
+# Common dependencies required by most packages
+common:
+  build:
+    - cmake: ">=3.12"
+    - make: "*"
+    - gcc: ">=7.0"
+    - g++: ">=7.0"
+    - pkg-config: "*"
+    
+  libraries:
+    - boost: ">=1.68"
+    - guile: ">=2.2"
+    
+  python:
+    - python3: ">=3.8"
+    - cython3: "*"
+    
+  testing:
+    - cxxtest: "*"
+
+# Ubuntu package names mapping
+ubuntu:
+  boost: "libboost-all-dev"
+  guile: "guile-3.0-dev"
+  cxxtest: "cxxtest"
+  cmake: "cmake"
+  python3: "python3-dev"
+  cython3: "cython3"
+  
+# Package-specific dependencies
+packages:
+  cogutil:
+    required:
+      - boost: ">=1.68"
+      - guile: ">=2.2"
+      - binutils: "*"
+      - libiberty: "*"
+    ubuntu:
+      - binutils-dev
+      - libiberty-dev
+      
+  atomspace:
+    requires_opencog:
+      - cogutil
+    required:
+      - boost: ">=1.68"
+      - guile: ">=2.2"
+    optional:
+      - valgrind: "*"
+      - doxygen: "*"
+    ubuntu:
+      - valgrind
+      - doxygen
+      
+  atomspace-rocks:
+    requires_opencog:
+      - cogutil
+      - atomspace
+      - atomspace-storage
+    required:
+      - rocksdb: ">=6.0"
+    ubuntu:
+      - librocksdb-dev
+      
+  atomspace-pgres:
+    requires_opencog:
+      - cogutil
+      - atomspace
+      - atomspace-storage
+    required:
+      - postgresql: "*"
+      - libpqxx: ">=6.0"
+    ubuntu:
+      - libpqxx-dev
+      - postgresql-client
+      
+  atomspace-storage:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required: []
+    
+  atomspace-cog:
+    requires_opencog:
+      - cogutil
+      - atomspace
+      - cogserver
+    required: []
+    
+  atomspace-restful:
+    requires_opencog:
+      - cogutil
+      - atomspace
+      - cogserver
+    required:
+      - jsoncpp: "*"
+      - zmq: "*"
+    ubuntu:
+      - libjsoncpp-dev
+      - libzmq3-dev
+      
+  atomspace-rpc:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required:
+      - grpc: "*"
+      - protobuf: "*"
+    ubuntu:
+      - libgrpc++-dev
+      - protobuf-compiler-grpc
+      - libprotobuf-dev
+      
+  atomspace-dht:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required:
+      - opendht: "*"
+    ubuntu:
+      - libopendht-dev
+      
+  atomspace-ipfs:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required: []
+    
+  atomspace-websockets:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required:
+      - boost: ">=1.68"
+    
+  atomspace-bridge:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required: []
+    
+  atomspace-metta:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required: []
+    
+  atomspace-agents:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required: []
+    
+  unify:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required:
+      - boost: ">=1.68"
+      
+  ure:
+    requires_opencog:
+      - cogutil
+      - atomspace
+      - unify
+    required:
+      - boost: ">=1.68"
+      
+  cogserver:
+    requires_opencog:
+      - cogutil
+      - atomspace
+      - atomspace-storage
+    required:
+      - boost: ">=1.68"
+      - openssl: "*"
+    optional:
+      - nlohmann_json: "*"
+    ubuntu:
+      - libssl-dev
+      - nlohmann-json3-dev
+      
+  attention:
+    requires_opencog:
+      - cogutil
+      - atomspace
+      - cogserver
+    required:
+      - boost: ">=1.68"
+      
+  spacetime:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required:
+      - boost: ">=1.68"
+    optional:
+      - octomap: "*"
+    ubuntu:
+      - liboctomap-dev
+      
+  pln:
+    requires_opencog:
+      - cogutil
+      - atomspace
+      - spacetime
+      - unify
+      - ure
+    required: []
+    
+  miner:
+    requires_opencog:
+      - cogutil
+      - atomspace
+      - unify
+      - ure
+    required:
+      - boost: ">=1.68"
+      
+  asmoses:
+    requires_opencog:
+      - cogutil
+      - atomspace
+      - ure
+    required:
+      - boost: ">=1.68"
+    optional:
+      - mpi: "*"
+    ubuntu:
+      - libopenmpi-dev
+      
+  moses:
+    requires_opencog:
+      - cogutil
+    required:
+      - boost: ">=1.68"
+    optional:
+      - mpi: "*"
+    ubuntu:
+      - libopenmpi-dev
+      
+  learn:
+    requires_opencog:
+      - cogutil
+      - atomspace
+      - cogserver
+      - atomspace-rocks
+    required: []
+    
+  generate:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required: []
+    
+  lg-atomese:
+    requires_opencog:
+      - cogutil
+      - atomspace
+      - atomspace-storage
+      - link-grammar
+    required:
+      - uuid: "*"
+    ubuntu:
+      - uuid-dev
+      
+  link-grammar:
+    required:
+      - autotools: "*"
+      - flex: "*"
+      - swig: "*"
+    ubuntu:
+      - autoconf
+      - autoconf-archive
+      - automake
+      - libtool
+      - flex
+      - swig
+      
+  vision:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required:
+      - opencv: ">=4.0"
+    ubuntu:
+      - libopencv-dev
+      
+  sensory:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required: []
+    
+  pattern-index:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required:
+      - boost: ">=1.68"
+      
+  dimensional-embedding:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required:
+      - boost: ">=1.68"
+      
+  visualization:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required:
+      - gtk3: "*"
+    ubuntu:
+      - libgtk-3-dev
+      
+  opencog:
+    requires_opencog:
+      - cogutil
+      - atomspace
+      - cogserver
+      - attention
+      - ure
+      - pln
+      - lg-atomese
+    required: []
+    
+  cheminformatics:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required: []
+    
+  agi-bio:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required: []
+    
+  TinyCog:
+    requires_opencog:
+      - atomspace
+    required:
+      - opencv: "*"
+      - guile: "*"
+      - protobuf: "*"
+    optional:
+      - festival: "*"
+      - pocketsphinx: "*"
+      - wiringpi: "*"
+      - raspicam: "*"
+    ubuntu:
+      - libopencv-dev
+      - libprotobuf-dev
+      - festival-dev
+      
+  benchmark:
+    requires_opencog:
+      - cogutil
+      - atomspace
+      - ure
+    required:
+      - boost: ">=1.68"
+      
+  python-attic:
+    requires_opencog:
+      - cogutil
+      - atomspace
+      - cogserver
+      - pln
+      - ure
+      - link-grammar
+    required:
+      - uuid: "*"
+    ubuntu:
+      - uuid-dev
+      
+  matrix:
+    requires_opencog:
+      - cogutil
+      - atomspace
+    required: []
+
+# Build tiers (packages within a tier can be built in parallel)
+tiers:
+  0:
+    description: "Foundation - No OpenCog dependencies"
+    packages:
+      - cogutil
+      - link-grammar
+      - moses
+      - external-tools
+      - ocpkg
+      - language-learning
+      - blender_api_msgs
+      
+  1:
+    description: "Core - Depends on cogutil"
+    packages:
+      - atomspace
+      
+  2:
+    description: "Extensions - Depends on atomspace"
+    packages:
+      - atomspace-storage
+      - unify
+      - spacetime
+      - generate
+      - pattern-index
+      - atomspace-agents
+      - atomspace-rpc
+      - atomspace-websockets
+      - atomspace-ipfs
+      - atomspace-metta
+      - atomspace-dht
+      - atomspace-bridge
+      - sensory
+      - vision
+      - agi-bio
+      - cheminformatics
+      - TinyCog
+      
+  3:
+    description: "Storage & Logic - Depends on tier 2"
+    packages:
+      - atomspace-rocks
+      - atomspace-pgres
+      - cogserver
+      - lg-atomese
+      - ure
+      - atomese-simd
+      
+  4:
+    description: "Cognitive - Depends on tier 3"
+    packages:
+      - attention
+      - learn
+      - miner
+      - matrix
+      - dimensional-embedding
+      
+  5:
+    description: "Advanced - Depends on tier 4"
+    packages:
+      - pln
+      - asmoses
+      - visualization
+      - atomspace-cog
+      - atomspace-restful
+      
+  6:
+    description: "Integration - Depends on most previous tiers"
+    packages:
+      - opencog
+      - python-attic
+      - benchmark
